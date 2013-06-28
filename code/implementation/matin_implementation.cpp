@@ -1,8 +1,8 @@
-#include <iostream>     // std::cout, std::fixed
-#include <iomanip>      // std::setprecision
-#include <cmath>	//floor, ceil
-#include <cstring> //memset
-#include <fstream> //ofstream, 
+#include <iostream>     // std::cout, std::fixed(no longer used)
+#include <iomanip>      // std::setprecision(no longer used)
+#include <cmath>	//floor, ceil (will try to not use)
+#include <cstring> //memset(no longer used)
+#include <fstream> //ofstream, ifstream (input/output from file)
 using namespace std;
 
 //Provided Functions
@@ -12,12 +12,14 @@ using namespace std;
 	int Decrypt(const char account_no[], const char passphrase[]);
 //End of Provided Functions
 
-bool makeDeposit(const char account_no[], const char passphrase[], double amount);  
-bool makeWithdraw(const char account_no[], const char passphrase[], double amount);  
-double getBalance(const char account_no[], const char passphrase[]);
-bool addNewAccount();
-void printTopNTransactions(const char account_no[], const char passphrase[], int n);
-bool createLogFile();
+//Required Functions to Implement
+	bool makeDeposit(const char account_no[], const char passphrase[], double amount);  
+	bool makeWithdrawal(const char account_no[], const char passphrase[], double amount);  
+	double getBalance(const char account_no[], const char passphrase[]);
+	bool addNewAccount();
+	void printTopNTransactions(const char account_no[], const char passphrase[], int n);
+	bool createLogFile();
+//End of Required Functions to Implement
 
 // Matin's Helper Functions
 	// check if amount is proper format
@@ -41,7 +43,6 @@ bool makeDeposit(const char account_no[], const char passphrase[], double amount
 
 	//Get Account Name from md5Hash
 	char account_name[64];
-	memset(account_name,0,64);
 	if(md5Hash(account_no, account_name, 64) != 0)
 	{
 		cout<<"Error: MD5HASH Error"<<endl;
@@ -49,17 +50,16 @@ bool makeDeposit(const char account_no[], const char passphrase[], double amount
 	}
 
 	//output amount to file
-	ofstream outfile;   // outfile is a name of our choosing.
-	outfile.open(account_name, std::ofstream::out | std::ofstream::app);
+	ofstream outfile(account_name, std::ofstream::app);   // outfile is a name of our choosing.
 	if ( !outfile )		   // Did the creation fail?
 	{
 	    cout << "Error: Cannot create results.txt!" << endl;
 	    return false; 
 	}
-	outfile <<setprecision(2)<<fixed<< amount << endl;
+	outfile << amount << endl;
 	outfile.close();
 
-	memset(account_name,0,64);//remove account hash from memory
+	//TODo: remove account hash from memory
 	Encrypt(account_no, passphrase);
 	return true;
 }
@@ -71,7 +71,7 @@ bool makeDeposit(const char account_no[], const char passphrase[], double amount
 *	make the withdrawal, it will log a proper message and charges $10 overdraft penalty 
 *	fee to the account, without making the requested withdrawal.
 */
-bool makeWithdraw(const char account_no[], const char passphrase[], double amount)
+bool makeWithdrawal(const char account_no[], const char passphrase[], double amount)
 {
 	if(!checkTransactionFormat(amount) || amount < 0)
 	{
@@ -82,7 +82,6 @@ bool makeWithdraw(const char account_no[], const char passphrase[], double amoun
 
 	//Get Account Name from md5Hash
 	char account_name[64];
-	memset(account_name,0,64);
 	if(md5Hash(account_no, account_name, 64) != 0)
 	{
 		cout<<"Error: MD5HASH Error"<<endl;
@@ -90,9 +89,8 @@ bool makeWithdraw(const char account_no[], const char passphrase[], double amoun
 	}
 
 	//output amount to file
-	ofstream outfile;   // outfile is a name of our choosing.
-	outfile.open(account_name, std::ofstream::out | std::ofstream::app);
-	if ( !outfile )		   // Did the creation fail?
+	ofstream outfile(account_name, std::ofstream::app);
+	if ( !outfile )
 	{
 	    cout << "Error: Cannot create results.txt!" << endl;
 	    return false; 
@@ -103,13 +101,13 @@ bool makeWithdraw(const char account_no[], const char passphrase[], double amoun
 	if(account_amount < amount)
 	{
 		//TODO: log a message in log file
-		outfile <<setprecision(2)<<fixed<< -10.0 << endl;
+		outfile <<-10.0 << endl;
 		return false;
 	}
 
 	//if there is enough in account, withdraw amount
 	amount = -1*amount;
-	outfile <<setprecision(2)<<fixed<< amount << endl;
+	outfile << amount << endl;
 	outfile.close();
 
 	return true;
@@ -128,7 +126,6 @@ double getBalance(const char account_no[], const char passphrase[])
 
 	//Get Account Name from md5Hash
 	char account_name[64];
-	memset(account_name,0,64);
 	if(md5Hash(account_no, account_name, 64) != 0)
 	{
 		cout<<"Error: MD5HASH Error"<<endl;
@@ -136,9 +133,7 @@ double getBalance(const char account_no[], const char passphrase[])
 	}
 
 	//read amounts from file
-	ifstream infile;   // infile is a name of our choosing.
-
-	infile.open(account_name, std::ofstream::out | std::ofstream::app);
+	ifstream infile(account_name);
 	//skip first line
 	char trash[100];
 	infile.getline(trash, 10000, '\n');
@@ -153,7 +148,7 @@ double getBalance(const char account_no[], const char passphrase[])
 	}
 
 	infile.close();
-	memset(account_name,0,64);//remove account hash from memory
+	//TODO: remove account hash from memory
 	Encrypt(account_no, passphrase);
 
 
@@ -183,8 +178,7 @@ void printTopNTransactions(const char account_no[], const char passphrase[], int
 	}
 
 	//read amounts from file
-	ifstream infile;   // infile is a name of our choosing.
-	infile.open(account_name, std::ofstream::out | std::ofstream::app);
+	ifstream infile(account_name);
 	infile.seekg(0, infile.end);
 	int length_of_file = infile.tellg();
 	length_of_file = length_of_file -1;
@@ -274,7 +268,6 @@ bool addNewAccount()
 	//TODO: Add Personal Information to First Line of Document
 	//Get Account Name from md5Hash
 	char account_name[64];
-	memset(account_name,0,64);
 	if(md5Hash(account_no, account_name, 64) != 0)
 	{
 		cout<<"Error: MD5HASH Error"<<endl;
@@ -282,18 +275,17 @@ bool addNewAccount()
 	}
 
 	//output amount to file
-	ofstream outfile;   // outfile is a name of our choosing.
-	outfile.open(account_name, std::ofstream::out | std::ofstream::app);
+	ofstream outfile(account_name, std::ofstream::app);   // outfile is a name of our choosing.
 	if ( !outfile )		   // Did the creation fail?
 	{
-	    cout << "Error: Cannot create results.txt!" << endl;
+	    cout << "Error: Cannot create " << account_name<<endl;
 	    return false; 
 	}
 	outfile <<"Personal Info Goes Here"<< endl;
 	outfile.close();
 
-	makeDeposit(account_no, passphrase, 0);
 	Encrypt(account_no, passphrase);
+	makeDeposit(account_no, passphrase, 0);
 	return true;
 }
 
@@ -366,7 +358,7 @@ int main()
 	//{
 	//	cout<<"deposite failure"<<endl;
 	//}
-	if(!makeWithdraw(account_no, passphrase, 200.00))
+	if(!makeWithdrawal(account_no, passphrase, 200.00))
 	{
 		cout<<"withdraw failure"<<endl;
 	}
@@ -374,7 +366,7 @@ int main()
 	{
 		cout<<"deposite failure"<<endl;
 	}
-	if(!makeWithdraw(account_no, passphrase, 80.00))
+	if(!makeWithdrawal(account_no, passphrase, 80.00))
 	{
 		cout<<"withdraw failure"<<endl;
 	}
