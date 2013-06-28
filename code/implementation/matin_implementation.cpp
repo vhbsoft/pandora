@@ -15,13 +15,14 @@ using namespace std;
 bool makeDeposit(const char account_no[], const char passphrase[], double amount);  
 bool makeWithdraw(const char account_no[], const char passphrase[], double amount);  
 double getBalance(const char account_no[], const char passphrase[]);
-bool addNewAccount(const char account_no[], const char passphrase[]);
+bool addNewAccount();
 void printTopNTransactions(const char account_no[], const char passphrase[], int n);
 bool createLogFile();
 
 // Matin's Helper Functions
 	// check if amount is proper format
 	bool checkTransactionFormat(double amount);
+	bool isValidAccountNumber(char account_no[]);
 //End Matin's Helper Functions
 
 /*
@@ -136,13 +137,17 @@ double getBalance(const char account_no[], const char passphrase[])
 
 	//read amounts from file
 	ifstream infile;   // infile is a name of our choosing.
+
 	infile.open(account_name, std::ofstream::out | std::ofstream::app);
+	//skip first line
+	char trash[100];
+	infile.getline(trash, 10000, '\n');
+
 	double current_amount = 0.0;
 	double total_amount = 0.0;
-	while(!infile.eof())
+	while(infile >> current_amount)
 	{
-		infile >> current_amount;
-		//cout<<current_amount<<endl;
+		cout<<current_amount<<endl;
 		total_amount += current_amount;
 		current_amount = 0.0;
 	}
@@ -167,17 +172,128 @@ double getBalance(const char account_no[], const char passphrase[])
 */
 void printTopNTransactions(const char account_no[], const char passphrase[], int n)
 {
+	double top_trans[1000];
+	Decrypt(account_no, passphrase);
+	//Get Account Name from md5Hash
+	char account_name[64];
+	if(md5Hash(account_no, account_name, 64) != 0)
+	{
+		cout<<"Error: MD5HASH Error"<<endl;
+		return;
+	}
+
+	//read amounts from file
+	ifstream infile;   // infile is a name of our choosing.
+	infile.open(account_name, std::ofstream::out | std::ofstream::app);
+	infile.seekg(0, infile.end);
+	int length_of_file = infile.tellg();
+	length_of_file = length_of_file -1;
+	if(length_of_file <= 1000)
+	{
+		infile.seekg(1,infile.beg);
+	}
+	else
+	{
+		int start_pos = length_of_file - 1000;
+		infile.seekg(start_pos, infile.beg);
+	}
+
+	//Read in Last 1000 Transactions
+	int i=0;
+	while(infile >> top_trans[i])
+	{
+		i++;
+	}
+
+	//Put the top transactions in order SORTING
+	for(i=0; i<1000;i++)
+	{
+		double find_largest = top_trans[i];
+		for(int j=i; j<(1000-i); j++)
+		{
+			if(find_largest < top_trans[j])
+			{
+				find_largest = top_trans[j];
+			}
+		}
+		top_trans[i] = find_largest;
+	}
+	infile.close();
+
+	//Print Out Top N Transactions from Array
+	if(n>1000)
+	{
+		n=1000;
+	}
+	for(i=0; i<n;i++)
+	{
+		cout<<top_trans[i]<<endl;
+	}
+
+	//TODO: remove account hash from memory
+	Encrypt(account_no, passphrase);
 	return;
 }
 
+
 /*
-*	Description for addNewAccount
+*	Upon calling this function it will ask the user the necessary information to open up an account.
+*	The newly created account will be encrypted before returning the function.
+*	Your function will technically do the following in the order provided. 
+*
+*	- Ask user for the account number
+*	- Checks if the entered bank account is valid otherwise it should return false
+*	(i.e. it is in the following format: XXXXX-XXXXX) 
+*	(we recommend creating a function called isValidAccountNumber(const char account_no[])) to check for that)
+*	- Ask user for the passphrase that will be associated to the account number
+*	- Ask user for the account holder's personal information
+*	- Call CreateNewAccountFile(account_no)
+*	- Add the account holder personal information in one line to the file
+*	- Add 0 to the file in the second line to represent the initial transaction amount
+*	- Encrypt file using passphrase
 */
-bool addNewAccount(const char account_no[], const char passphrase[])
+bool addNewAccount()
 {
-	if(CreateNewAccountFile(account_no) > 0)
+	char account_no[12];
+	char passphrase[60];
+	cout<<"Please Enter an Account Number formatted as XXXXX-XXXXX :"<<endl;
+	cin >> account_no;
+	if(isValidAccountNumber(account_no))
+	{
+		cerr<<"Invalid Account Number in addNewAccount()"<<endl;
 		return false;
+	}
+	if(CreateNewAccountFile(account_no) > 0)
+	{
+		cout<<"Error: Account Already Exists"<<endl;
+		return false;
+	}
+	cout<<"Please Enter a Password to Associate with Your Account :"<<endl;
+	cin >> passphrase;
+	//TODO: Check if valid passphrase
+	//TODO: Add Personal Information to First Line of Document
+	//Get Account Name from md5Hash
+	char account_name[64];
+	memset(account_name,0,64);
+	if(md5Hash(account_no, account_name, 64) != 0)
+	{
+		cout<<"Error: MD5HASH Error"<<endl;
+		return false;
+	}
+
+	//output amount to file
+	ofstream outfile;   // outfile is a name of our choosing.
+	outfile.open(account_name, std::ofstream::out | std::ofstream::app);
+	if ( !outfile )		   // Did the creation fail?
+	{
+	    cout << "Error: Cannot create results.txt!" << endl;
+	    return false; 
+	}
+	outfile <<"Personal Info Goes Here"<< endl;
+	outfile.close();
+
 	makeDeposit(account_no, passphrase, 0);
+	Encrypt(account_no, passphrase);
 	return true;
 }
 
@@ -193,6 +309,13 @@ bool createLogFile()
 *****************************************************************************************************
 *****************************************************************************************************/
 //Matin's Implentation of Helper Functions
+bool isValidAccountNumber(char account_no[])
+{
+	if(account_no[11] = '\0')
+		return true;
+	return false;
+}
+
 
 bool checkTransactionFormat(double amount)
 {
@@ -215,11 +338,22 @@ bool checkTransactionFormat(double amount)
 	return true;
 }
 
+//bool insertInArray(double* arr_ptr, int curr_len, int max_len, double value, int pos)
+//{
+//	if(pos >= max_len)
+//		return false;
+//	if(max_len != curr_len)
+//	{
+//		if(pos>
+//	}
+//	return true;
+//}
+
 int main()
 {
-	char account_no[] = "12345";
+	char account_no[] = "12345-12345";
 	char passphrase[] = "hello world";
-	if(!addNewAccount(account_no, passphrase))
+	if(!addNewAccount())
 	{
 		cout<<"add account failure"<<endl;
 		return 1;
