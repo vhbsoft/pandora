@@ -287,7 +287,6 @@ void printTopNTransactions(const char account_no[], const char passphrase[], int
 	return;
 }
 
-
 /*
 *	Upon calling this function it will ask the user the necessary information to open up an account.
 *	The newly created account will be encrypted before returning the function.
@@ -348,11 +347,18 @@ bool addNewAccount()
 }
 
 /*
-*	Description for createLogFile
+*	Creates "banking.log" in the current directory
+*	return false if failed.
 */
 bool createLogFile()
 {
-	return false;
+	const char log_file_name[] = "banking.log";
+	ofstream logfile = ofstream(log_file_name);
+	if(!logfile)
+	{
+		return false;
+	}
+	return true;
 }
 
 /****************************************************************************************************
@@ -451,6 +457,9 @@ int main()
 	cout<<" PRINTING TOP 100 TRANSACTIONS " << endl;
 
 	printTopNTransactions(account_no, passphrase, 100);
+	
+	if(createLogFile())
+		cout<<"Log File Created"<<endl;
 
 	return 0;
 
