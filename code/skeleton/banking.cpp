@@ -101,15 +101,22 @@ bool addNewAccount(const char account_no[], const char passphrase[])
 }
 
 /*
-*	Description for createLogFile
+	Function "log" appends to the log file any message of size up to 100. 
+	Note that the if the file doesn't exist it will create it. Steps:
+    1. open the log file for appending (return false if failed)
+    2. add a simple timestamp preceding each log entry
+    3. append the massage to the log file(one line for each log message)
+    4. return true
 */
-bool createLogFile()
+bool log(FILE*, const char log_message)
 {
 	return false;
 }
 
 
-/*****************************************************************************************************************************************************************DO_NOT_TOUCH____PROVIDED_FUNCTION_IMPLEMENTATION____DO_NOT_TOUCH____PROVIDED_FUNCTION_IMPLEMENTATION____DO_NOT_TOUCH____PROVIDED_FUNCTION_IMPLEMENTATION******************************************************************************************************************************************************************/
+/**************************************************************************************************************************************************************
+***DO_NOT_TOUCH____PROVIDED_FUNCTION_IMPLEMENTATION____DO_NOT_TOUCH____PROVIDED_FUNCTION_IMPLEMENTATION____DO_NOT_TOUCH____PROVIDED_FUNCTION_IMPLEMENTATION****
+**************************************************************************************************************************************************************/
 
 #ifndef ENCRYPT_DECRYPT_DO_NOT_TOUCH
 #define _CRT_SECURE_NO_WARNINGS
