@@ -108,7 +108,7 @@ bool addNewAccount(const char account_no[], const char passphrase[])
     3. append the massage to the log file(one line for each log message)
     4. return true
 */
-bool log(FILE*, const char log_message)
+bool log(FILE* log_file, const char log_message)
 {
 	return false;
 }
