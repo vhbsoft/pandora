@@ -416,7 +416,7 @@ int Encrypt(const char account_no[], const char passphrase[]){
 	}
 
 	//Open Output File in Append Mode
-	FILE* iofile = fopen(account_name, "r+");
+	FILE* iofile = fopen(account_name, "rb");
 	if ( !iofile )
 	{
 		cout << "Error: Cannot find file"<< account_name << endl;
@@ -424,30 +424,25 @@ int Encrypt(const char account_no[], const char passphrase[]){
 	}
 
 	//Buffer to hold all file data
-	//char* buffer;
 	char buffer[16];
 	size_t result;
 	long lSize;
 	// obtain file size:
-	fseek (iofile , 0 , SEEK_END);
+	fseek (iofile , 0L , SEEK_END);
 	lSize = ftell (iofile);
 	rewind (iofile);
-
 	// allocate memory to contain the whole file:
 	long size_of_array = sizeof(char)*(lSize);
 	if(size_of_array%16 != 0)
 		size_of_array = ((size_of_array/16)+1)*16;
 	if((sizeof(char)*lSize) < size_of_array)
 	{
-		cout<<"balls"<<endl;
-		cout<<lSize<<endl;
-		cout<<size_of_array<<endl;
 		iofile = freopen(account_name, "a+", iofile);
 		char c = '\0';
 		for(int i=lSize; i<size_of_array;i++)
 			putc(c, iofile);
-		iofile = freopen(account_name, "r+", iofile);
-		fseek (iofile , 0 , SEEK_END);
+		iofile = freopen(account_name, "rb", iofile);
+		fseek (iofile , 0L , SEEK_END);
 		lSize = ftell (iofile);
 		rewind (iofile);
 		if(lSize < size_of_array)
@@ -455,9 +450,6 @@ int Encrypt(const char account_no[], const char passphrase[]){
 			cout<<"adding to file did not work"<<endl;
 			return -1;
 		}
-		cout<<"balls"<<endl;
-		cout<<lSize<<endl;
-		cout<<size_of_array<<endl;
 	}
 
 	//Create New File
@@ -465,7 +457,7 @@ int Encrypt(const char account_no[], const char passphrase[]){
 	strcpy(new_file, account_name);
 	const char temp_ext[] = "_temp";
 	strcat(new_file, temp_ext);
-	FILE* encrypted_file = fopen(new_file, "w+");
+	FILE* encrypted_file = fopen(new_file, "wb");
 	if ( !encrypted_file )
 	{
 		cout << "Error: Cannot find file"<< new_file << endl;
@@ -475,6 +467,9 @@ int Encrypt(const char account_no[], const char passphrase[]){
 	for(int i=0; i<lSize; i+=16)
 	{
 		result = fread (buffer,1,16,iofile);
+		/*if(result < 16)
+			continue;
+		cout<<"result = "<<result<<endl;*/
 		if (ferror(iofile)) {fputs ("Reading Error in Encrypt",stderr); exit (3);}
 		//Encrypt
 		aes256_context ctx; 
@@ -487,11 +482,13 @@ int Encrypt(const char account_no[], const char passphrase[]){
 
 		if (ferror(iofile)) {fputs ("Writing Error in Encrypt",stderr); exit (3);}
 	}
+	//Close Files
 	fclose(iofile);
 	fclose(encrypted_file);
+	
+	//Remove Old File and Rename new file
 	remove(account_name);
 	rename(new_file, account_name);
-	//free(buffer);
 	return 0;
 }
 
@@ -504,7 +501,7 @@ int Decrypt(const char account_no[], const char passphrase[]){
 	}
 
 	//Open Output File in Append Mode
-	FILE* iofile = fopen(account_name, "r+");
+	FILE* iofile = fopen(account_name, "rb");
 	if ( !iofile )
 	{
 		cout << "Error: Cannot find file"<< account_name << endl;
@@ -517,7 +514,7 @@ int Decrypt(const char account_no[], const char passphrase[]){
 	size_t result;
 	long lSize;
 	// obtain file size:
-	fseek (iofile , 0 , SEEK_END);
+	fseek (iofile , 0L , SEEK_END);
 	lSize = ftell (iofile);
 	rewind (iofile);
 
@@ -527,14 +524,11 @@ int Decrypt(const char account_no[], const char passphrase[]){
 		size_of_array = ((size_of_array/16)+1)*16;
 	if((sizeof(char)*lSize) < size_of_array)
 	{
-		cout<<"nuts"<<endl;
-		cout<<lSize<<endl;
-		cout<<size_of_array<<endl;
 		iofile = freopen(account_name, "a+", iofile);
 		char c = '\0';
 		for(int i=lSize; i<size_of_array;i++)
 			putc(c, iofile);
-		iofile = freopen(account_name, "r+", iofile);
+		iofile = freopen(account_name, "rb", iofile);
 		fseek (iofile , 0 , SEEK_END);
 		lSize = ftell (iofile);
 		rewind (iofile);
@@ -543,9 +537,6 @@ int Decrypt(const char account_no[], const char passphrase[]){
 			cout<<"adding to file did not work"<<endl;
 			return -1;
 		}
-		cout<<"nuts"<<endl;
-		cout<<lSize<<endl;
-		cout<<size_of_array<<endl;
 	}
 
 	//Create New File
@@ -553,7 +544,7 @@ int Decrypt(const char account_no[], const char passphrase[]){
 	strcpy(new_file, account_name);
 	const char temp_ext[] = "_temp";
 	strcat(new_file, temp_ext);
-	FILE* encrypted_file = fopen(new_file, "w+");
+	FILE* encrypted_file = fopen(new_file, "wb");
 	if ( !encrypted_file )
 	{
 		cout << "Error: Cannot find file"<< new_file << endl;
@@ -571,30 +562,26 @@ int Decrypt(const char account_no[], const char passphrase[]){
 		aes256_decrypt_ecb(&ctx, (uint8_t*)buffer);
 
 		//Write back to file
-		//iofile = freopen(account_name, "w+", iofile);
-		if(!erase)
+		int end_of_file = 16;
+		for(int j=0; j<16; j++)
 		{
-			int end_of_file = 16;
-			for(int j=0; j<16; j++)
+			if(buffer[j] == '\0')
 			{
-				if(buffer[j] == '\0')
-				{
-					erase = true;
-					end_of_file = j;
-					break;
-				}
+				erase = true;
+				end_of_file = j;
+				break;
 			}
-			result = fwrite (buffer,1,end_of_file,encrypted_file);
-			if (ferror(iofile)) {fputs ("Writing Error in Encrypt",stderr); exit (3);}
 		}
+		result = fwrite (buffer,1,end_of_file,encrypted_file);
+		if (ferror(iofile)) {fputs ("Writing Error in Encrypt",stderr); exit (3);}
 	}
-	
-
+	//Close Files
 	fclose(iofile);
 	fclose(encrypted_file);
+	
+	//Remove Old File and Rename new file
 	remove(account_name);
 	rename(new_file, account_name);
-	//free(buffer);
 	return 0;
 }
 
