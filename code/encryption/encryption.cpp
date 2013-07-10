@@ -407,11 +407,8 @@ int main (int argc, char *argv[])
 	return 0;
 } /* main */
 
-int Encrypt(const char account_n[], const char passphrase[]){
-	char account_hash[HASH_SIZE];
-	//Get Account Name from md5Hash
-	char account_name[33] = "12345-12345";
-	const char account_no[] = "12345-12345";
+int Encrypt(const char account_no[], const char passphrase[]){
+	char account_name[33];
 	if(md5Hash(account_no, account_name) != 0)
 	{
 		cout<<"Error: MD5HASH Error"<<endl;
@@ -427,7 +424,8 @@ int Encrypt(const char account_n[], const char passphrase[]){
 	}
 
 	//Buffer to hold all file data
-	char* buffer;
+	//char* buffer;
+	char buffer[16];
 	size_t result;
 	long lSize;
 	// obtain file size:
@@ -439,38 +437,66 @@ int Encrypt(const char account_n[], const char passphrase[]){
 	long size_of_array = sizeof(char)*(lSize);
 	if(size_of_array%16 != 0)
 		size_of_array = ((size_of_array/16)+1)*16;
-	buffer = (char*) malloc (sizeof(char)*(size_of_array));
-	if (buffer == NULL) {fputs ("Memory Error in Encrypt",stderr); exit (2);}
+	if((sizeof(char)*lSize) < size_of_array)
+	{
+		cout<<"balls"<<endl;
+		cout<<lSize<<endl;
+		cout<<size_of_array<<endl;
+		iofile = freopen(account_name, "a+", iofile);
+		char c = '\0';
+		for(int i=lSize; i<size_of_array;i++)
+			putc(c, iofile);
+		iofile = freopen(account_name, "r+", iofile);
+		fseek (iofile , 0 , SEEK_END);
+		lSize = ftell (iofile);
+		rewind (iofile);
+		if(lSize < size_of_array)
+		{
+			cout<<"adding to file did not work"<<endl;
+			return -1;
+		}
+		cout<<"balls"<<endl;
+		cout<<lSize<<endl;
+		cout<<size_of_array<<endl;
+	}
 
-	// copy the file into the buffer:
-	result = fread (buffer,1,lSize,iofile);
-	for(int i=lSize; i<size_of_array;i++)
-		buffer[i]='\0';
-	buffer[size_of_array-1]='\0';
-	cout<<"LSize, Size_of_Array, Result = "<<lSize<<", "<<size_of_array<<", "<<result<<endl;
-	if (ferror(iofile)) {fputs ("Reading Error in Encrypt",stderr); exit (3);}
+	//Create New File
+	char new_file[100];
+	strcpy(new_file, account_name);
+	const char temp_ext[] = "_temp";
+	strcat(new_file, temp_ext);
+	FILE* encrypted_file = fopen(new_file, "w+");
+	if ( !encrypted_file )
+	{
+		cout << "Error: Cannot find file"<< new_file << endl;
+		return false; 
+	}
 
-	//Encrypt
-	aes256_context ctx; 
-	aes256_init(&ctx, (uint8_t*)passphrase);
-	aes256_encrypt_ecb(&ctx, (uint8_t*)buffer);
+	for(int i=0; i<lSize; i+=16)
+	{
+		result = fread (buffer,1,16,iofile);
+		if (ferror(iofile)) {fputs ("Reading Error in Encrypt",stderr); exit (3);}
+		//Encrypt
+		aes256_context ctx; 
+		aes256_init(&ctx, (uint8_t*)passphrase);
+		aes256_encrypt_ecb(&ctx, (uint8_t*)buffer);
 
-	//Write back to file
-	iofile = freopen(account_name, "w+", iofile);
-	result = fwrite (buffer,1,size_of_array,iofile);
+		//Write back to file
+		//iofile = freopen(account_name, "w+", iofile);
+		result = fwrite (buffer,1,16,encrypted_file);
 
-	if (ferror(iofile)) {fputs ("Writing Error in Encrypt",stderr); exit (3);}
-	free(buffer);
-
+		if (ferror(iofile)) {fputs ("Writing Error in Encrypt",stderr); exit (3);}
+	}
 	fclose(iofile);
+	fclose(encrypted_file);
+	remove(account_name);
+	rename(new_file, account_name);
+	//free(buffer);
 	return 0;
 }
 
-int Decrypt(const char account_n[], const char passphrase[]){
-	char account_hash[HASH_SIZE];
-	//Get Account Name from md5Hash
-	char account_name[33] = "12345-12345";
-	const char account_no[] = "12345-12345";
+int Decrypt(const char account_no[], const char passphrase[]){
+	char account_name[33];
 	if(md5Hash(account_no, account_name) != 0)
 	{
 		cout<<"Error: MD5HASH Error"<<endl;
@@ -486,7 +512,8 @@ int Decrypt(const char account_n[], const char passphrase[]){
 	}
 
 	//Buffer to hold all file data
-	char* buffer;
+	//char* buffer;
+	char buffer[16];
 	size_t result;
 	long lSize;
 	// obtain file size:
@@ -498,35 +525,76 @@ int Decrypt(const char account_n[], const char passphrase[]){
 	long size_of_array = sizeof(char)*(lSize);
 	if(size_of_array%16 != 0)
 		size_of_array = ((size_of_array/16)+1)*16;
-	buffer = (char*) malloc (size_of_array);
-	if (buffer == NULL) {fputs ("Memory error",stderr); exit (2);}
-
-	// copy the file into the buffer:
-	result = fread (buffer,1,lSize,iofile);
-	if (ferror(iofile)) {fputs ("Reading Error in Decrypt",stderr); exit (3);}
-
-	//Encrypt
-	aes256_context ctx; 
-	/*aes256_init(&ctx, (uint8_t*)passphrase);
-	aes256_encrypt_ecb(&ctx, (uint8_t*)buffer);*/
-
-	aes256_init(&ctx, (uint8_t*)passphrase);
-	aes256_decrypt_ecb(&ctx, (uint8_t*)buffer);
-	//Write back to file
-	lSize = 0;
-	for(int i=0; i<size_of_array;i++){
-		if(buffer[i]=='\0'||!isascii(buffer[i]))
-			buffer[i]='\0';
-		else
-			lSize++;
+	if((sizeof(char)*lSize) < size_of_array)
+	{
+		cout<<"nuts"<<endl;
+		cout<<lSize<<endl;
+		cout<<size_of_array<<endl;
+		iofile = freopen(account_name, "a+", iofile);
+		char c = '\0';
+		for(int i=lSize; i<size_of_array;i++)
+			putc(c, iofile);
+		iofile = freopen(account_name, "r+", iofile);
+		fseek (iofile , 0 , SEEK_END);
+		lSize = ftell (iofile);
+		rewind (iofile);
+		if(lSize < size_of_array)
+		{
+			cout<<"adding to file did not work"<<endl;
+			return -1;
+		}
+		cout<<"nuts"<<endl;
+		cout<<lSize<<endl;
+		cout<<size_of_array<<endl;
 	}
-	iofile = freopen(account_name, "w+", iofile);
-	result = fwrite (buffer,1,lSize,iofile);
 
-	if (ferror(iofile)) {fputs ("Writing Error in Decrypt",stderr); exit (3);}
+	//Create New File
+	char new_file[100];
+	strcpy(new_file, account_name);
+	const char temp_ext[] = "_temp";
+	strcat(new_file, temp_ext);
+	FILE* encrypted_file = fopen(new_file, "w+");
+	if ( !encrypted_file )
+	{
+		cout << "Error: Cannot find file"<< new_file << endl;
+		return false; 
+	}
 
-	free(buffer);
+	bool erase = false;
+	for(int i=0; i<lSize; i+=16)
+	{
+		result = fread (buffer,1,16,iofile);
+		if (ferror(iofile)) {fputs ("Reading Error in Encrypt",stderr); exit (3);}
+		//Encrypt
+		aes256_context ctx; 
+		aes256_init(&ctx, (uint8_t*)passphrase);
+		aes256_decrypt_ecb(&ctx, (uint8_t*)buffer);
+
+		//Write back to file
+		//iofile = freopen(account_name, "w+", iofile);
+		if(!erase)
+		{
+			int end_of_file = 16;
+			for(int j=0; j<16; j++)
+			{
+				if(buffer[j] == '\0')
+				{
+					erase = true;
+					end_of_file = j;
+					break;
+				}
+			}
+			result = fwrite (buffer,1,end_of_file,encrypted_file);
+			if (ferror(iofile)) {fputs ("Writing Error in Encrypt",stderr); exit (3);}
+		}
+	}
+	
+
 	fclose(iofile);
+	fclose(encrypted_file);
+	remove(account_name);
+	rename(new_file, account_name);
+	//free(buffer);
 	return 0;
 }
 
