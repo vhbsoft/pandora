@@ -16,7 +16,7 @@ using namespace std;
 	double getBalance(const char account_no[], const char passphrase[]);
 	bool addNewAccount();
 	void printTopNTransactions(const char account_no[], const char passphrase[], int n);
-	bool createLogFile();
+	bool log(FILE* log_file, const char log_message);
 //End of Required Functions to Implement
 
 int main()
