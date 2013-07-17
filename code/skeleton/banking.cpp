@@ -11,7 +11,7 @@
 using namespace std;
 
 //Provided functions
-	int md5Hash(const char account_no[], char md5_hash_account_no[], int size_of_hash);
+	int md5Hash(const char account_no[], char md5_hash_account_no[]);
 	int CreateNewAccountFile(const char account_no[]);
 	int Encrypt(const char account_no[], const char passphrase[]);
 	int Decrypt(const char account_no[], const char passphrase[]);
@@ -99,7 +99,7 @@ bool addNewAccount(const char account_no[], const char passphrase[])
 //bool log(FILE* log_file, const char log_message[])
 bool log(ofstream& log_file_stream, const char log_message[])
 {
-	//Add your code here
+	log_file_stream << log_message;
 	return false;
 }
 
@@ -959,8 +959,8 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 			if (ferror(iofile)) {fputs ("Reading Error in Encrypt",stderr); exit (3);}
 			//Encrypt
 			aes256_context ctx; 
-			aes256_init(&ctx, (uint8_t*)passphrase);
-			aes256_decrypt_ecb(&ctx, (uint8_t*)buffer);
+			aes256_init(&ctx, (uint8_t*)(passphrase));
+			aes256_decrypt_ecb(&ctx, (uint8_t*)(buffer));
 
 			//Write back to file
 			int end_of_file = 16;
@@ -1001,10 +1001,10 @@ int CreateNewAccountFile(const char account_no[])
 {
 	const int size_of_hash = 64;
 	char account_hash[size_of_hash];
-	if(md5Hash(account_no, account_hash, size_of_hash) != 0 )
+	if(md5Hash(account_no, account_hash) != 0 )
 		return 2;
-	FILE* new_account_file;
-	if(fopen_s(&new_account_file, account_hash, "a") == 0)
+	FILE* new_account_file = fopen(account_hash, "a");
+	if(new_account_file != 0)
 	{
 		fclose(new_account_file);
 		return 0;
