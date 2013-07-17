@@ -1,122 +1,118 @@
+//Name:
+//SID: 
+
 #define _CRT_SECURE_NO_WARNINGS
-#include <iostream>     // std::cout, std::fixed(no longer used)
-#include <fstream> //ofstream, ifstream (input/output from file)
+#include <iostream>     
+#include <fstream>
+#include <stdlib.h>
+#include <cstring>
+// You should not add any other header files
+
 using namespace std;
 
-//Provided Functions
+//Provided functions
 	int md5Hash(const char account_no[], char md5_hash_account_no[], int size_of_hash);
 	int CreateNewAccountFile(const char account_no[]);
 	int Encrypt(const char account_no[], const char passphrase[]);
 	int Decrypt(const char account_no[], const char passphrase[]);
-//End of Provided Functions
+//End of provided functions
 
-//Required Functions to Implement
+//Required functions to implement
 	bool makeDeposit(const char account_no[], const char passphrase[], double amount);  
 	bool makeWithdrawal(const char account_no[], const char passphrase[], double amount);  
 	double getBalance(const char account_no[], const char passphrase[]);
 	bool addNewAccount();
-	void printTopNTransactions(const char account_no[], const char passphrase[], int n);
-	bool log(FILE* log_file, const char log_message);
-//End of Required Functions to Implement
+	void printTopTenTransactions(const char account_no[], const char passphrase[]);
+//	bool log(FILE* log_file, const char log_message[]);
+	bool log(ofstream& log_file_stream, const char log_message[]);
+
+//End of required functions to implement
+
+
+
+
+//Some constant global variables
+	const int FILE_NAME_SIZE = 64;
+	const int LOG_MESSAGE_MAX_SIZE = 100;
+	const int ACCOUNT_NUMBER_SIZE = 12;
+	const int PASSPHRASE_MAX_SIZE = 60;
+	const char LOG_FILE_NAME[] = "banking.log";
+//End of some constant global variables
+
+
+
+//Your helper functions implementation
+
+
+//End of your helper functions implementation
+
+
+
 
 int main()
 {
+	//Add your code here
 	return 0;
 }
 
-/*
-*	It first checks if amount is in the proper amount format
-*	(e.g., 57.20, 90, 120.41),if it is not it returns false. 
-*	It makes a deposit of amount to the account (i.e., 
-*	appends amount to the account file).
-*/
+
 bool makeDeposit(const char account_no[], const char passphrase[], double amount)
 {
+	//Add your code here
 	return false;
 }
 
-/*
-*	It first checks if amount is in the proper amount format
-*	(e.g., 57.20, 90, 120.41), if it is not it returns false. 
-*	It checks if amount is less than or equal to balance 
-*	before making the withdrawal. If there is insufficient 
-*	amount in the account to make the withdrawal, it will log 
-*	a proper message and charges $10 overdraft penalty fee to 
-*	the account, without making the requested withdrawal.
-*/
-bool makeWithdraw(const char account_no[], const char passphrase[], double amount)
+
+
+bool makeWithdrawal(const char account_no[], const char passphrase[], double amount)
 {
+	//Add your code here
 	return false;
 }
 
-/*
-*	For the particular bank account (account_no), this 
-*	function calculates the account balance by summing all 
-*	the deposits and withdrawals in the transaction history 
-*	for that particular bank account. For instance, for the 
-*	example provided the function will return 10 because 
-*	0+20+100-10+100-200=10.
-*/
+
+
 double getBalance(const char account_no[], const char passphrase[])
 {
-	return 0.0;
+	//Add your code here
+	return 0.00;
 }
 
-/*
-*	This function returns the n transactions with highest 
-*	amount from the last 1000 transactions (whether they 
-*	are deposits or withdraws). If n is greater than the 
-*	number of transactions it will return all transactions 
-*	recorded in the account transaction history.
-*
-*	For example, executing printTopNTransactions("12345-67890", 3) would output: 
-*	-200
-*	100
-*	100
-*/
-void printTopNTransactions(const char account_no[], const char passphrase[], int n)
+
+
+void printTopTenTransactions(const char account_no[], const char passphrase[])
 {
+	//Add your code here
 	return;
 }
 
-/*
-*	Upon calling this function it will ask the user the necessary information to open up an account.
-*	The newly created account will be encrypted before returning the function.
-*	Your function will technically do the following in the order provided. 
-*
-*	- Ask user for the account number
-*	- Checks if the entered bank account is valid otherwise it should return false
-*	(i.e. it is in the following format: XXXXX-XXXXX) 
-*	(we recommend creating a function called isValidAccountNumber(const char account_no[])) to check for that)
-*	- Ask user for the passphrase that will be associated to the account number
-*	- Ask user for the account holder's personal information
-*	- Call CreateNewAccountFile(account_no)
-*	- Add the account holder personal information in one line to the file
-*	- Add 0 to the file in the second line to represent the initial transaction amount
-*	- Encrypt file using passphrase
-*/
+
+
 bool addNewAccount(const char account_no[], const char passphrase[])
 {
+	//Add your code here
 	return false;
 }
+
+
+
+//bool log(FILE* log_file, const char log_message[])
+bool log(ofstream& log_file_stream, const char log_message[])
+{
+	//Add your code here
+	return false;
+}
+
 
 /*
-	Function "log" appends to the log file any message of size up to 100. 
-	Note that the if the file doesn't exist it will create it. Steps:
-    1. open the log file for appending (return false if failed)
-    2. add a simple timestamp preceding each log entry
-    3. append the massage to the log file(one line for each log message)
-    4. return true
+=========================================================================================
+=========================================================================================
+== YOU DO NOT NEED TO UNDERSTAND AND SHOULD NOT CHANGE ANY CODE BELOW THIS LINE 
+=========================================================================================
+=========================================================================================
 */
-bool log(FILE* log_file, const char log_message)
-{
-	return false;
-}
+//Provided Functions Implementation
 
-
-/**************************************************************************************************************************************************************
-***DO_NOT_TOUCH____PROVIDED_FUNCTION_IMPLEMENTATION____DO_NOT_TOUCH____PROVIDED_FUNCTION_IMPLEMENTATION____DO_NOT_TOUCH____PROVIDED_FUNCTION_IMPLEMENTATION****
-**************************************************************************************************************************************************************/
 
 #ifndef ENCRYPT_DECRYPT_DO_NOT_TOUCH
 #define _CRT_SECURE_NO_WARNINGS
@@ -858,7 +854,7 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 		}
 
 		//Create New File
-		char new_file[100];
+		char new_file[FILE_NAME_SIZE];
 		strcpy(new_file, account_name);
 		const char temp_ext[] = "_temp";
 		strcat(new_file, temp_ext);
@@ -901,7 +897,7 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 		char account_name[33];
 		if(md5Hash(account_no, account_name) != 0)
 		{
-			cout<<"Error: MD5HASH Error"<<endl;
+			cerr<<"Error: MD5HASH Error"<<endl;
 			return false;
 		}
 
@@ -909,7 +905,7 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 		FILE* iofile = fopen(account_name, "rb");
 		if ( !iofile )
 		{
-			cout << "Error: Cannot find file"<< account_name << endl;
+			cerr << "Error: Cannot find file"<< account_name << endl;
 			return false; 
 		}
 
@@ -945,14 +941,14 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 		}
 
 		//Create New File
-		char new_file[100];
+		char new_file[FILE_NAME_SIZE];
 		strcpy(new_file, account_name);
 		const char temp_ext[] = "_temp";
 		strcat(new_file, temp_ext);
 		FILE* encrypted_file = fopen(new_file, "wb");
 		if ( !encrypted_file )
 		{
-			cout << "Error: Cannot find file"<< new_file << endl;
+			cerr << "Error: Cannot find file"<< new_file << endl;
 			return false; 
 		}
 
@@ -991,3 +987,27 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 	}
 
 #endif
+
+//--------------------------------------------------
+//int CreateNewAccountFile(const char [] account_no)  
+//
+//- creates [md5_hash(account_no)]
+//- returns 0 if success
+//- returns non-zero if failed
+//
+//--------------------------------------------------
+
+int CreateNewAccountFile(const char account_no[])
+{
+	const int size_of_hash = 64;
+	char account_hash[size_of_hash];
+	if(md5Hash(account_no, account_hash, size_of_hash) != 0 )
+		return 2;
+	FILE* new_account_file;
+	if(fopen_s(&new_account_file, account_hash, "a") == 0)
+	{
+		fclose(new_account_file);
+		return 0;
+	}
+	return 1;
+}
