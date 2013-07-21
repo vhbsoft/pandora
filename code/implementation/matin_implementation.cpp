@@ -1,46 +1,121 @@
-#include <iostream>     // std::cout, std::fixed(no longer used)
-#include <iomanip>      // std::setprecision(no longer used)
-#include <cmath>	//floor, ceil (will try to not use)
-#include <cstring> //memset(no longer used)
-#include <fstream> //ofstream, ifstream (input/output from file)
+//Name:
+//SID: 
+
+#define _CRT_SECURE_NO_WARNINGS
+#include <iostream>     
+#include <fstream>
+#include <stdlib.h>
+#include <cstring>
+// You should not add any other header files
+
 using namespace std;
 
-//Defined Constants
-	#define APPEND std::ofstream::app
-	const int FILE_NAME = 64;
-//End Defined Constants
-
-//Provided Functions
-	int md5Hash(const char account_no[], char md5_hash_account_no[], int size_of_hash);
+//Provided functions
+	int md5Hash(const char account_no[], char md5_hash_account_no[]);
 	int CreateNewAccountFile(const char account_no[]);
 	int Encrypt(const char account_no[], const char passphrase[]);
 	int Decrypt(const char account_no[], const char passphrase[]);
-//End of Provided Functions
+//End of provided functions
 
-//Required Functions to Implement
+//Required functions to implement
 	bool makeDeposit(const char account_no[], const char passphrase[], double amount);  
 	bool makeWithdrawal(const char account_no[], const char passphrase[], double amount);  
 	double getBalance(const char account_no[], const char passphrase[]);
 	bool addNewAccount();
-	void printTopNTransactions(const char account_no[], const char passphrase[], int n);
-	bool log(FILE* log_file, const char log_message);
-//End of Required Functions to Implement
+	void printTopTenTransactions(const char account_no[], const char passphrase[]);
+//	bool log(FILE* log_file, const char log_message[]);
+	bool log(ofstream& log_file_stream, const char log_message[]);
+	bool isValidPassphrase(FILE* account_file, const char passphrase[]);
+//End of required functions to implement
 
-//Helper Functions
-	// check if amount is proper format
+//Some constant global variables
+	const int FILE_NAME_SIZE = 64;
+	const int LOG_MESSAGE_MAX_SIZE = 100;
+	const int ACCOUNT_NUMBER_SIZE = 12;
+	const int PASSPHRASE_MAX_SIZE = 60;
+	const char LOG_FILE_NAME[] = "banking.log";
+	#define APPEND std::ofstream::app
+//End of some constant global variables
+
+//Your helper functions implementation
 	bool checkTransactionFormat(double amount);
-	bool isValidAccountNumber(char account_no[]);
+	bool isValidAccountNumber(const char account_no[]);
 	void memoryErase(char account_name[], int size);
-//End Helper Functions
+//End of your helper functions implementation
 
-/*
-*	It first checks if amount is in the proper amount format (e.g., 57.20, 90, 120.41), 
-*	if it is not it returns false. It makes a deposit of amount to the account 
-*	(i.e., appends amount to the account file).
-*/
+
+
+
+int main()
+{
+	char account_no[12];
+	char passphrase[60];
+	cout<<"Please Enter an Account Number formatted as XXXXX-XXXXX :"<<endl;
+	cin.getline(account_no,12);
+	if(isValidAccountNumber(account_no))
+	{
+		cerr<<"Invalid Account Number in addNewAccount()"<<endl;
+		return false;
+	}
+	cout<<"Please Enter a Password to Associate with Your Account :"<<endl;
+	cin.getline(passphrase,60);
+	if(!addNewAccount())
+	{
+		cout<<"add account failure"<<endl;
+		return 1;
+	}
+	if(!makeDeposit(account_no, passphrase, 20.00))
+	{
+		cout<<"deposite failure"<<endl;
+	}
+	//if(!makeDeposit(account_no, passphrase, 10.123))
+	//{
+	//	cout<<"deposite failure"<<endl;
+	//}
+	if(!makeWithdrawal(account_no, passphrase, 200.00))
+	{
+		cout<<"withdraw failure"<<endl;
+	}
+	if(!makeDeposit(account_no, passphrase, 100.30))
+	{
+		cout<<"deposite failure"<<endl;
+	}
+	if(!makeWithdrawal(account_no, passphrase, 80.00))
+	{
+		cout<<"withdraw failure"<<endl;
+	}
+	if(!makeDeposit(account_no, passphrase, 59.0000))
+	{
+		cout<<"deposite failure"<<endl;
+	}
+
+	cout<<"balance is "<<getBalance(account_no,passphrase)<<endl;// 20-10+100.3+-80+59
+	cout<<"=============================================================================="<<endl;
+	cout<<" PRINTING TOP 10 TRANSACTIONS " << endl<<endl;
+
+	printTopTenTransactions(account_no, passphrase);
+	
+	ofstream outfile(LOG_FILE_NAME, ofstream::app);
+	if ( !outfile )
+	    cout << "Error: Cannot find file"<< LOG_FILE_NAME << endl;
+	else
+		cout << "Created"<< LOG_FILE_NAME << endl;
+	const char log_message1[] = "this is my log 1st message";
+	const char log_message2[] = "this is my log 2nd message";
+	const char log_message3[] = "this is my log 3rd message";
+	log(outfile, log_message1);
+	log(outfile, log_message2);
+	log(outfile, log_message3);
+	outfile.close();
+	Decrypt(account_no, passphrase);
+	return 0;
+
+}
+
+
 bool makeDeposit(const char account_no[], const char passphrase[], double amount)
 {
-	//Check Format of the Amount and Make Sure It
+		//Check Format of the Amount and Make Sure It
 	//Is Not Negative
 	if(!checkTransactionFormat(amount) || amount < 0)
 	{
@@ -52,13 +127,23 @@ bool makeDeposit(const char account_no[], const char passphrase[], double amount
 	Decrypt(account_no, passphrase);
 
 	//Get Account Name from md5Hash
-	char account_name[FILE_NAME];
-	if(md5Hash(account_no, account_name, FILE_NAME) != 0)
+	char account_name[FILE_NAME_SIZE];
+	if(md5Hash(account_no, account_name) != 0)
 	{
 		cout<<"Error: MD5HASH Error"<<endl;
 		Encrypt(account_no, passphrase);
 		return false;
 	}
+
+	FILE* acc = fopen(account_name, "r");
+	if(!isValidPassphrase(acc, passphrase))
+	{
+		cout<<"Error: Account Password Invalid"<<endl;
+		fclose(acc);
+		Encrypt(account_no, passphrase);
+		return false;
+	}
+	fclose(acc);
 
 	//Open Output File in Append Mode
 	ofstream outfile(account_name, APPEND);
@@ -78,7 +163,7 @@ bool makeDeposit(const char account_no[], const char passphrase[], double amount
 
 	//For Security Purposes Only -- NOT REQUIRED
 	//Fill in Memory of Account_Name with Arbitrary Data
-	memoryErase(account_name, FILE_NAME);
+	memoryErase(account_name, FILE_NAME_SIZE);
 
 	//Encrypt the File Before Exiting Function
 	Encrypt(account_no, passphrase);
@@ -87,16 +172,11 @@ bool makeDeposit(const char account_no[], const char passphrase[], double amount
 	return true;
 }
 
-/*
-*	It first checks if amount is in the proper amount format (e.g., 57.20, 90, 120.41), 
-*	if it is not it returns false. It checks if amount is less than or equal to balance 
-*	before making the withdrawal. If there is insufficient amount in the account to
-*	make the withdrawal, it will log a proper message and charges $10 overdraft penalty 
-*	fee to the account, without making the requested withdrawal.
-*/
+
+
 bool makeWithdrawal(const char account_no[], const char passphrase[], double amount)
 {
-	//Check Format of the Amount and Make Sure It
+		//Check Format of the Amount and Make Sure It
 	//Is Not Negative
 	if(!checkTransactionFormat(amount) || amount < 0)
 	{
@@ -108,12 +188,23 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 	Decrypt(account_no, passphrase);
 
 	//Get Account Name from md5Hash
-	char account_name[FILE_NAME];
-	if(md5Hash(account_no, account_name, FILE_NAME) != 0)
+	char account_name[FILE_NAME_SIZE];
+	if(md5Hash(account_no, account_name) != 0)
 	{
 		cout<<"Error: MD5HASH Error"<<endl;
+		Encrypt(account_no, passphrase);
 		return false;
 	}
+
+	FILE* acc = fopen(account_name, "r");
+	if(!isValidPassphrase(acc, passphrase))
+	{
+		cout<<"Error: Account Password Invalid"<<endl;
+		fclose(acc);
+		Encrypt(account_no, passphrase);
+		return false;
+	}
+	fclose(acc);
 
 	//Open Output File in Append Mode
 	//Will Output a $10 Fee if Account is Overdrawn
@@ -148,29 +239,35 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 
 	//For Security Purposes Only -- NOT REQUIRED
 	//Fill in Memory of Account_Name with Arbitrary Data
-	memoryErase(account_name, FILE_NAME);
+	memoryErase(account_name, FILE_NAME_SIZE);
 	Encrypt(account_no, passphrase);
 	return true;
 }
 
-/*
-*	For the particular bank account (account_no), this function calculates the account 
-*	balance by summing all the deposits and withdrawals in the transaction history for 
-*	that particular bank account. For instance, for the example provided the function 
-*	will return 10 because 0+20+100-10+100-200=10.
-*/
+
+
 double getBalance(const char account_no[], const char passphrase[])
 {
 	//cout<<endl<<endl;
 	Decrypt(account_no, passphrase);
 
 	//Get Account Name from md5Hash
-	char account_name[FILE_NAME];
-	if(md5Hash(account_no, account_name, FILE_NAME) != 0)
+	char account_name[FILE_NAME_SIZE];
+	if(md5Hash(account_no, account_name) != 0)
 	{
 		cout<<"Error: MD5HASH Error"<<endl;
-		return false;
+		return 0.0;
 	}
+
+	FILE* acc = fopen(account_name, "r");
+	if(!isValidPassphrase(acc, passphrase))
+	{
+		cout<<"Error: Account Password Invalid"<<endl;
+		fclose(acc);
+		Encrypt(account_no, passphrase);
+		return 0.0;
+	}
+	fclose(acc);
 
 	//read amounts from file
 	ifstream infile(account_name);
@@ -190,7 +287,7 @@ double getBalance(const char account_no[], const char passphrase[])
 
 	//For Security Purposes Only -- NOT REQUIRED
 	//Fill in Memory of Account_Name with Arbitrary Data
-	memoryErase(account_name, FILE_NAME);
+	memoryErase(account_name, FILE_NAME_SIZE);
 
 	Encrypt(account_no, passphrase);
 
@@ -198,27 +295,30 @@ double getBalance(const char account_no[], const char passphrase[])
 	return total_amount;
 }
 
-/*
-*	This function returns the n transactions with highest amount (whether they are deposits 
-*	or withdraws). If n is greater than the number of transactions it will return all 
-*	transactions recorded in the account transaction history. 
-*
-*	For example, executing printTopNTransactions("12345-67890", 3) would output: 
-*	-200
-*	100
-*	100
-*/
-void printTopNTransactions(const char account_no[], const char passphrase[], int n)
+
+
+void printTopTenTransactions(const char account_no[], const char passphrase[])
 {
+		int n = 10;
 	double top_trans[1000];
 	Decrypt(account_no, passphrase);
 	//Get Account Name from md5Hash
-	char account_name[FILE_NAME];
-	if(md5Hash(account_no, account_name, FILE_NAME) != 0)
+	char account_name[FILE_NAME_SIZE];
+	if(md5Hash(account_no, account_name) != 0)
 	{
 		cout<<"Error: MD5HASH Error"<<endl;
 		return;
 	}
+
+	FILE* acc = fopen(account_name, "r");
+	if(!isValidPassphrase(acc, passphrase))
+	{
+		cout<<"Error: Account Password Invalid"<<endl;
+		fclose(acc);
+		Encrypt(account_no, passphrase);
+		return;
+	}
+	fclose(acc);
 
 	ifstream infile(account_name);
 	char trash[100];
@@ -281,34 +381,20 @@ void printTopNTransactions(const char account_no[], const char passphrase[], int
 
 	//For Security Purposes Only -- NOT REQUIRED
 	//Fill in Memory of Account_Name with Arbitrary Data
-	memoryErase(account_name, FILE_NAME);
+	memoryErase(account_name, FILE_NAME_SIZE);
 
 	Encrypt(account_no, passphrase);
 	return;
 }
 
-/*
-*	Upon calling this function it will ask the user the necessary information to open up an account.
-*	The newly created account will be encrypted before returning the function.
-*	Your function will technically do the following in the order provided. 
-*
-*	- Ask user for the account number
-*	- Checks if the entered bank account is valid otherwise it should return false
-*	(i.e. it is in the following format: XXXXX-XXXXX) 
-*	(we recommend creating a function called isValidAccountNumber(const char account_no[])) to check for that)
-*	- Ask user for the passphrase that will be associated to the account number
-*	- Ask user for the account holder's personal information
-*	- Call CreateNewAccountFile(account_no)
-*	- Add the account holder personal information in one line to the file
-*	- Add 0 to the file in the second line to represent the initial transaction amount
-*	- Encrypt file using passphrase
-*/
+
+
 bool addNewAccount()
 {
 	char account_no[12];
 	char passphrase[60];
 	cout<<"Please Enter an Account Number formatted as XXXXX-XXXXX :"<<endl;
-	cin >> account_no;
+	cin.getline(account_no,12);
 	if(isValidAccountNumber(account_no))
 	{
 		cerr<<"Invalid Account Number in addNewAccount()"<<endl;
@@ -320,62 +406,59 @@ bool addNewAccount()
 		return false;
 	}
 	cout<<"Please Enter a Password to Associate with Your Account :"<<endl;
-	cin >> passphrase;
-	//TODO: Check if valid passphrase
-	//TODO: Add Personal Information to First Line of Document
+	cin.getline(passphrase,60);
+	//char account_no[12] = "12345-12345";
+	//char passphrase[60] = "hello world";
 	//Get Account Name from md5Hash
-	char account_name[FILE_NAME];
-	if(md5Hash(account_no, account_name, FILE_NAME) != 0)
+	char account_name[FILE_NAME_SIZE];
+	if(md5Hash(account_no, account_name) != 0)
 	{
 		cout<<"Error: MD5HASH Error"<<endl;
 		return false;
 	}
 
 	//output amount to file
-	ofstream outfile(account_name, APPEND);   // outfile is a name of our choosing.
-	if ( !outfile )		   // Did the creation fail?
+	ofstream newfile(account_name);   // outfile is a name of our choosing.
+	if ( !newfile )		   // Did the creation fail?
 	{
 	    cout << "Error: Cannot create " << account_name<<endl;
 	    return false; 
 	}
-	outfile <<"Personal Info Goes Here"<< endl;
-	outfile.close();
-
+	newfile <<passphrase<< endl;
+	newfile.close();
 	Encrypt(account_no, passphrase);
-	makeDeposit(account_no, passphrase, 0);
-	return true;
-}
-
-/*
-*	Creates "banking.log" in the current directory
-*	return false if failed.
-*/
-bool createLogFile()
-{
-	const char log_file_name[] = "banking.log";
-	ofstream logfile = ofstream(log_file_name);
-	if(!logfile)
+	if(!makeDeposit(account_no, passphrase, 0.00))
 	{
-		return false;
+		cout<<"deposite failure"<<endl;
 	}
 	return true;
+
 }
-/*
-	Function "log" appends to the log file any message of size up to 100. 
-	Note that the if the file doesn't exist it will create it. Steps:
-    1. open the log file for appending (return false if failed)
-    2. add a simple timestamp preceding each log entry
-    3. append the massage to the log file(one line for each log message)
-    4. return true
-*/
-bool log(FILE* log_file, const char log_message)
+
+bool isValidPassphrase(FILE* account_file, const char passphrase[])
 {
+    //reads the first line of the file 
+    //returns true if passphrase == the first line, returns false otherwise
+	char check_phrase[60];
+	fgets ( check_phrase, 60, account_file );
+	cout<<"Password in File: "<<check_phrase;
+	cout<<"Password by User: "<<passphrase<<endl;
+	if(strcmp(passphrase, check_phrase)==0){
+		return true;
+	}
+	return false;
+
+
+}
+
+//bool log(FILE* log_file, const char log_message[])
+bool log(ofstream& log_file_stream, const char log_message[])
+{
+	log_file_stream << log_message<<endl;
 	return false;
 }
 
-/****************************************************************************************************
-*****************************************************************************************************
-*****************************************************************************************************/
+/*Helper Functions*/
 //Implentation of Helper Functions
 void memoryErase(char account_name[], int size)
 {
@@ -385,10 +468,12 @@ void memoryErase(char account_name[], int size)
 	}
 }
 
-bool isValidAccountNumber(char account_no[])
+bool isValidAccountNumber(const char account_no[])
 {
-	if(account_no[11] = '\0')
+	int acc_no_len = strlen(account_no);
+	if(acc_no_len != 11 ){
 		return true;
+	}
 	return false;
 }
 
@@ -408,63 +493,15 @@ bool checkTransactionFormat(double amount)
 	return true;
 }
 
-int main()
-{
-	char account_no[] = "12345-12345";
-	char passphrase[] = "hello world";
-	if(!addNewAccount())
-	{
-		cout<<"add account failure"<<endl;
-		return 1;
-	}
-	if(!makeDeposit(account_no, passphrase, 20.00))
-	{
-		cout<<"deposite failure"<<endl;
-	}
-	//if(!makeDeposit(account_no, passphrase, 10.123))
-	//{
-	//	cout<<"deposite failure"<<endl;
-	//}
-	if(!makeWithdrawal(account_no, passphrase, 200.00))
-	{
-		cout<<"withdraw failure"<<endl;
-	}
-	if(!makeDeposit(account_no, passphrase, 100.30))
-	{
-		cout<<"deposite failure"<<endl;
-	}
-	if(!makeWithdrawal(account_no, passphrase, 80.00))
-	{
-		cout<<"withdraw failure"<<endl;
-	}
-	if(!makeDeposit(account_no, passphrase, 59.0000))
-	{
-		cout<<"deposite failure"<<endl;
-	}
 
-	cout<<"balance is "<<getBalance(account_no,passphrase)<<endl;// 20-10+100.3+-80+59
-	cout<<"=============================================================================="<<endl;
-	cout<<" PRINTING TOP 3 TRANSACTIONS " << endl<<endl;
-
-	printTopNTransactions(account_no, passphrase, 3);
-
-	cout<<endl<<"=============================================================================="<<endl;
-	cout<<" PRINTING TOP 100 TRANSACTIONS " << endl;
-
-	printTopNTransactions(account_no, passphrase, 100);
-	
-	if(createLogFile())
-		cout<<"Log File Created"<<endl;
-
-	return 0;
-
-}
-
-/************************************************************************************************************
-DO NOT TOUCH ===== PROVIED FUNCTIONS IMPLEMENTATION ===== DO NOT TOUCH ==== PROVIDED FUNCTIONS IMPLEMENTATION
-*************************************************************************************************************/
-
-/*Provied Functions Impementation*/
+/*
+=========================================================================================
+=========================================================================================
+== YOU DO NOT NEED TO UNDERSTAND AND SHOULD NOT CHANGE ANY CODE BELOW THIS LINE 
+=========================================================================================
+=========================================================================================
+*/
+//Provided Functions Implementation
 
 
 #ifndef ENCRYPT_DECRYPT_DO_NOT_TOUCH
@@ -908,10 +945,10 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 		* optimizations are not included to reduce source code size and avoid
 		* compile-time configuration.
 		*/
-	#define F(x, y, z)			((z) ^ ((x) & ((y) ^ (z))))
-	#define G(x, y, z)			((y) ^ ((z) & ((x) ^ (y))))
-	#define H(x, y, z)			((x) ^ (y) ^ (z))
-	#define I(x, y, z)			((y) ^ ((x) | ~(z)))
+	#define F1(x, y, z)			((z) ^ ((x) & ((y) ^ (z))))
+	#define G1(x, y, z)			((y) ^ ((z) & ((x) ^ (y))))
+	#define H1(x, y, z)			((x) ^ (y) ^ (z))
+	#define I1(x, y, z)			((y) ^ ((x) | ~(z)))
 	#define STEP(f, a, b, c, d, x, t, s) \
 		(a) += f((b), (c), (d)) + (x) + (t); \
 		(a) = (((a) << (s)) | (((a) & 0xffffffff) >> (32 - (s)))); \
@@ -951,76 +988,76 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 			saved_d = d;
 
 	/* Round 1 */
-			STEP(F, a, b, c, d, SET(0), 0xd76aa478, 7)
-			STEP(F, d, a, b, c, SET(1), 0xe8c7b756, 12)
-			STEP(F, c, d, a, b, SET(2), 0x242070db, 17)
-			STEP(F, b, c, d, a, SET(3), 0xc1bdceee, 22)
-			STEP(F, a, b, c, d, SET(4), 0xf57c0faf, 7)
-			STEP(F, d, a, b, c, SET(5), 0x4787c62a, 12)
-			STEP(F, c, d, a, b, SET(6), 0xa8304613, 17)
-			STEP(F, b, c, d, a, SET(7), 0xfd469501, 22)
-			STEP(F, a, b, c, d, SET(8), 0x698098d8, 7)
-			STEP(F, d, a, b, c, SET(9), 0x8b44f7af, 12)
-			STEP(F, c, d, a, b, SET(10), 0xffff5bb1, 17)
-			STEP(F, b, c, d, a, SET(11), 0x895cd7be, 22)
-			STEP(F, a, b, c, d, SET(12), 0x6b901122, 7)
-			STEP(F, d, a, b, c, SET(13), 0xfd987193, 12)
-			STEP(F, c, d, a, b, SET(14), 0xa679438e, 17)
-			STEP(F, b, c, d, a, SET(15), 0x49b40821, 22)
+			STEP(F1, a, b, c, d, SET(0), 0xd76aa478, 7)
+			STEP(F1, d, a, b, c, SET(1), 0xe8c7b756, 12)
+			STEP(F1, c, d, a, b, SET(2), 0x242070db, 17)
+			STEP(F1, b, c, d, a, SET(3), 0xc1bdceee, 22)
+			STEP(F1, a, b, c, d, SET(4), 0xf57c0faf, 7)
+			STEP(F1, d, a, b, c, SET(5), 0x4787c62a, 12)
+			STEP(F1, c, d, a, b, SET(6), 0xa8304613, 17)
+			STEP(F1, b, c, d, a, SET(7), 0xfd469501, 22)
+			STEP(F1, a, b, c, d, SET(8), 0x698098d8, 7)
+			STEP(F1, d, a, b, c, SET(9), 0x8b44f7af, 12)
+			STEP(F1, c, d, a, b, SET(10), 0xffff5bb1, 17)
+			STEP(F1, b, c, d, a, SET(11), 0x895cd7be, 22)
+			STEP(F1, a, b, c, d, SET(12), 0x6b901122, 7)
+			STEP(F1, d, a, b, c, SET(13), 0xfd987193, 12)
+			STEP(F1, c, d, a, b, SET(14), 0xa679438e, 17)
+			STEP(F1, b, c, d, a, SET(15), 0x49b40821, 22)
 
 	/* Round 2 */
-			STEP(G, a, b, c, d, GET(1), 0xf61e2562, 5)
-			STEP(G, d, a, b, c, GET(6), 0xc040b340, 9)
-			STEP(G, c, d, a, b, GET(11), 0x265e5a51, 14)
-			STEP(G, b, c, d, a, GET(0), 0xe9b6c7aa, 20)
-			STEP(G, a, b, c, d, GET(5), 0xd62f105d, 5)
-			STEP(G, d, a, b, c, GET(10), 0x02441453, 9)
-			STEP(G, c, d, a, b, GET(15), 0xd8a1e681, 14)
-			STEP(G, b, c, d, a, GET(4), 0xe7d3fbc8, 20)
-			STEP(G, a, b, c, d, GET(9), 0x21e1cde6, 5)
-			STEP(G, d, a, b, c, GET(14), 0xc33707d6, 9)
-			STEP(G, c, d, a, b, GET(3), 0xf4d50d87, 14)
-			STEP(G, b, c, d, a, GET(8), 0x455a14ed, 20)
-			STEP(G, a, b, c, d, GET(13), 0xa9e3e905, 5)
-			STEP(G, d, a, b, c, GET(2), 0xfcefa3f8, 9)
-			STEP(G, c, d, a, b, GET(7), 0x676f02d9, 14)
-			STEP(G, b, c, d, a, GET(12), 0x8d2a4c8a, 20)
+			STEP(G1, a, b, c, d, GET(1), 0xf61e2562, 5)
+			STEP(G1, d, a, b, c, GET(6), 0xc040b340, 9)
+			STEP(G1, c, d, a, b, GET(11), 0x265e5a51, 14)
+			STEP(G1, b, c, d, a, GET(0), 0xe9b6c7aa, 20)
+			STEP(G1, a, b, c, d, GET(5), 0xd62f105d, 5)
+			STEP(G1, d, a, b, c, GET(10), 0x02441453, 9)
+			STEP(G1, c, d, a, b, GET(15), 0xd8a1e681, 14)
+			STEP(G1, b, c, d, a, GET(4), 0xe7d3fbc8, 20)
+			STEP(G1, a, b, c, d, GET(9), 0x21e1cde6, 5)
+			STEP(G1, d, a, b, c, GET(14), 0xc33707d6, 9)
+			STEP(G1, c, d, a, b, GET(3), 0xf4d50d87, 14)
+			STEP(G1, b, c, d, a, GET(8), 0x455a14ed, 20)
+			STEP(G1, a, b, c, d, GET(13), 0xa9e3e905, 5)
+			STEP(G1, d, a, b, c, GET(2), 0xfcefa3f8, 9)
+			STEP(G1, c, d, a, b, GET(7), 0x676f02d9, 14)
+			STEP(G1, b, c, d, a, GET(12), 0x8d2a4c8a, 20)
 
 	/* Round 3 */
-			STEP(H, a, b, c, d, GET(5), 0xfffa3942, 4)
-			STEP(H, d, a, b, c, GET(8), 0x8771f681, 11)
-			STEP(H, c, d, a, b, GET(11), 0x6d9d6122, 16)
-			STEP(H, b, c, d, a, GET(14), 0xfde5380c, 23)
-			STEP(H, a, b, c, d, GET(1), 0xa4beea44, 4)
-			STEP(H, d, a, b, c, GET(4), 0x4bdecfa9, 11)
-			STEP(H, c, d, a, b, GET(7), 0xf6bb4b60, 16)
-			STEP(H, b, c, d, a, GET(10), 0xbebfbc70, 23)
-			STEP(H, a, b, c, d, GET(13), 0x289b7ec6, 4)
-			STEP(H, d, a, b, c, GET(0), 0xeaa127fa, 11)
-			STEP(H, c, d, a, b, GET(3), 0xd4ef3085, 16)
-			STEP(H, b, c, d, a, GET(6), 0x04881d05, 23)
-			STEP(H, a, b, c, d, GET(9), 0xd9d4d039, 4)
-			STEP(H, d, a, b, c, GET(12), 0xe6db99e5, 11)
-			STEP(H, c, d, a, b, GET(15), 0x1fa27cf8, 16)
-			STEP(H, b, c, d, a, GET(2), 0xc4ac5665, 23)
+			STEP(H1, a, b, c, d, GET(5), 0xfffa3942, 4)
+			STEP(H1, d, a, b, c, GET(8), 0x8771f681, 11)
+			STEP(H1, c, d, a, b, GET(11), 0x6d9d6122, 16)
+			STEP(H1, b, c, d, a, GET(14), 0xfde5380c, 23)
+			STEP(H1, a, b, c, d, GET(1), 0xa4beea44, 4)
+			STEP(H1, d, a, b, c, GET(4), 0x4bdecfa9, 11)
+			STEP(H1, c, d, a, b, GET(7), 0xf6bb4b60, 16)
+			STEP(H1, b, c, d, a, GET(10), 0xbebfbc70, 23)
+			STEP(H1, a, b, c, d, GET(13), 0x289b7ec6, 4)
+			STEP(H1, d, a, b, c, GET(0), 0xeaa127fa, 11)
+			STEP(H1, c, d, a, b, GET(3), 0xd4ef3085, 16)
+			STEP(H1, b, c, d, a, GET(6), 0x04881d05, 23)
+			STEP(H1, a, b, c, d, GET(9), 0xd9d4d039, 4)
+			STEP(H1, d, a, b, c, GET(12), 0xe6db99e5, 11)
+			STEP(H1, c, d, a, b, GET(15), 0x1fa27cf8, 16)
+			STEP(H1, b, c, d, a, GET(2), 0xc4ac5665, 23)
 
 	/* Round 4 */
-			STEP(I, a, b, c, d, GET(0), 0xf4292244, 6)
-			STEP(I, d, a, b, c, GET(7), 0x432aff97, 10)
-			STEP(I, c, d, a, b, GET(14), 0xab9423a7, 15)
-			STEP(I, b, c, d, a, GET(5), 0xfc93a039, 21)
-			STEP(I, a, b, c, d, GET(12), 0x655b59c3, 6)
-			STEP(I, d, a, b, c, GET(3), 0x8f0ccc92, 10)
-			STEP(I, c, d, a, b, GET(10), 0xffeff47d, 15)
-			STEP(I, b, c, d, a, GET(1), 0x85845dd1, 21)
-			STEP(I, a, b, c, d, GET(8), 0x6fa87e4f, 6)
-			STEP(I, d, a, b, c, GET(15), 0xfe2ce6e0, 10)
-			STEP(I, c, d, a, b, GET(6), 0xa3014314, 15)
-			STEP(I, b, c, d, a, GET(13), 0x4e0811a1, 21)
-			STEP(I, a, b, c, d, GET(4), 0xf7537e82, 6)
-			STEP(I, d, a, b, c, GET(11), 0xbd3af235, 10)
-			STEP(I, c, d, a, b, GET(2), 0x2ad7d2bb, 15)
-			STEP(I, b, c, d, a, GET(9), 0xeb86d391, 21)
+			STEP(I1, a, b, c, d, GET(0), 0xf4292244, 6)
+			STEP(I1, d, a, b, c, GET(7), 0x432aff97, 10)
+			STEP(I1, c, d, a, b, GET(14), 0xab9423a7, 15)
+			STEP(I1, b, c, d, a, GET(5), 0xfc93a039, 21)
+			STEP(I1, a, b, c, d, GET(12), 0x655b59c3, 6)
+			STEP(I1, d, a, b, c, GET(3), 0x8f0ccc92, 10)
+			STEP(I1, c, d, a, b, GET(10), 0xffeff47d, 15)
+			STEP(I1, b, c, d, a, GET(1), 0x85845dd1, 21)
+			STEP(I1, a, b, c, d, GET(8), 0x6fa87e4f, 6)
+			STEP(I1, d, a, b, c, GET(15), 0xfe2ce6e0, 10)
+			STEP(I1, c, d, a, b, GET(6), 0xa3014314, 15)
+			STEP(I1, b, c, d, a, GET(13), 0x4e0811a1, 21)
+			STEP(I1, a, b, c, d, GET(4), 0xf7537e82, 6)
+			STEP(I1, d, a, b, c, GET(11), 0xbd3af235, 10)
+			STEP(I1, c, d, a, b, GET(2), 0x2ad7d2bb, 15)
+			STEP(I1, b, c, d, a, GET(9), 0xeb86d391, 21)
 
 			a += saved_a;
 			b += saved_b;
@@ -1148,8 +1185,10 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 		MD5_Init(&file_hash);
 		char *account_num;
 		int acc_no_len = strlen(account_no);
-		if(acc_no_len != 11 )
+		if(acc_no_len != 11 ){
+			cout<<"account length error: length is "<<acc_no_len<<endl;
 			return -1;
+		}
 		account_num = (char*)account_no;
 		MD5_Update(&file_hash, account_num, strlen(account_num));
 		unsigned char result[16];
@@ -1161,11 +1200,8 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 		return 0;
 	}
 
-	int Encrypt(const char account_n[], const char passphrase[]){
-		char account_hash[HASH_SIZE];
-		//Get Account Name from md5Hash
-		char account_name[33] = "12345-12345";
-		const char account_no[] = "12345-12345";
+	int Encrypt(const char account_no[], const char passphrase[]){
+		char account_name[33];
 		if(md5Hash(account_no, account_name) != 0)
 		{
 			cout<<"Error: MD5HASH Error"<<endl;
@@ -1173,7 +1209,7 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 		}
 
 		//Open Output File in Append Mode
-		FILE* iofile = fopen(account_name, "r+");
+		FILE* iofile = fopen(account_name, "rb");
 		if ( !iofile )
 		{
 			cout << "Error: Cannot find file"<< account_name << endl;
@@ -1181,70 +1217,97 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 		}
 
 		//Buffer to hold all file data
-		char* buffer;
+		char buffer[16];
 		size_t result;
 		long lSize;
 		// obtain file size:
-		fseek (iofile , 0 , SEEK_END);
+		fseek (iofile , 0L , SEEK_END);
 		lSize = ftell (iofile);
 		rewind (iofile);
-
 		// allocate memory to contain the whole file:
 		long size_of_array = sizeof(char)*(lSize);
 		if(size_of_array%16 != 0)
 			size_of_array = ((size_of_array/16)+1)*16;
-		buffer = (char*) malloc (sizeof(char)*(size_of_array));
-		if (buffer == NULL) {fputs ("Memory Error in Encrypt",stderr); exit (2);}
+		if((sizeof(char)*lSize) < size_of_array)
+		{
+			iofile = freopen(account_name, "a+", iofile);
+			char c = '\0';
+			for(int i=lSize; i<size_of_array;i++)
+				putc(c, iofile);
+			iofile = freopen(account_name, "rb", iofile);
+			fseek (iofile , 0L , SEEK_END);
+			lSize = ftell (iofile);
+			rewind (iofile);
+			if(lSize < size_of_array)
+			{
+				cout<<"adding to file did not work"<<endl;
+				return -1;
+			}
+		}
 
-		// copy the file into the buffer:
-		result = fread (buffer,1,lSize,iofile);
-		for(int i=lSize; i<size_of_array;i++)
-			buffer[i]='\0';
-		buffer[size_of_array-1]='\0';
-		cout<<"LSize, Size_of_Array, Result = "<<lSize<<", "<<size_of_array<<", "<<result<<endl;
-		if (ferror(iofile)) {fputs ("Reading Error in Encrypt",stderr); exit (3);}
+		//Create New Fileis
+		char new_file[FILE_NAME_SIZE];
+		strcpy(new_file, account_name);
+		const char temp_ext[] = "_temp";
+		strcat(new_file, temp_ext);
+		FILE* encrypted_file = fopen(new_file, "wb");
+		if ( !encrypted_file )
+		{
+			cout << "Error: Cannot find file"<< new_file << endl;
+			return false; 
+		}
 
-		//Encrypt
-		aes256_context ctx; 
-		aes256_init(&ctx, (unsigned char*)passphrase);
-		aes256_encrypt_ecb(&ctx, (unsigned char*)buffer);
+		for(int i=0; i<lSize; i+=16)
+		{
+			result = fread (buffer,1,16,iofile);
+			/*if(result < 16)
+				continue;
+			cout<<"before encrypt = "<<buffer<<endl;*/
+			if (ferror(iofile)) {fputs ("Reading Error in Encrypt",stderr); exit (3);}
+			//Encrypt
+			aes256_context ctx; 
+			aes256_init(&ctx, (uint8_t*)passphrase);
+			aes256_encrypt_ecb(&ctx, (uint8_t*)buffer);
 
-		//Write back to file
-		iofile = freopen(account_name, "w+", iofile);
-		result = fwrite (buffer,1,size_of_array,iofile);
+			//Write back to file
+			//iofile = freopen(account_name, "w+", iofile);
+			result = fwrite (buffer,1,16,encrypted_file);
 
-		if (ferror(iofile)) {fputs ("Writing Error in Encrypt",stderr); exit (3);}
-		free(buffer);
-
+			if (ferror(iofile)) {fputs ("Writing Error in Encrypt",stderr); exit (3);}
+		}
+		//Close Files
 		fclose(iofile);
+		fclose(encrypted_file);
+		
+		//Remove Old File and Rename new file
+		remove(account_name);
+		rename(new_file, account_name);
 		return 0;
 	}
 
-	int Decrypt(const char account_n[], const char passphrase[]){
-		char account_hash[HASH_SIZE];
-		//Get Account Name from md5Hash
-		char account_name[33] = "12345-12345";
-		const char account_no[] = "12345-12345";
+	int Decrypt(const char account_no[], const char passphrase[]){
+		char account_name[33];
 		if(md5Hash(account_no, account_name) != 0)
 		{
-			cout<<"Error: MD5HASH Error"<<endl;
+			cerr<<"Error: MD5HASH Error"<<endl;
 			return false;
 		}
 
 		//Open Output File in Append Mode
-		FILE* iofile = fopen(account_name, "r+");
+		FILE* iofile = fopen(account_name, "rb");
 		if ( !iofile )
 		{
-			cout << "Error: Cannot find file"<< account_name << endl;
+			cerr << "Error: Cannot find file"<< account_name << endl;
 			return false; 
 		}
 
 		//Buffer to hold all file data
-		char* buffer;
+		//char* buffer;
+		char buffer[16];
 		size_t result;
 		long lSize;
 		// obtain file size:
-		fseek (iofile , 0 , SEEK_END);
+		fseek (iofile , 0L , SEEK_END);
 		lSize = ftell (iofile);
 		rewind (iofile);
 
@@ -1252,37 +1315,93 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 		long size_of_array = sizeof(char)*(lSize);
 		if(size_of_array%16 != 0)
 			size_of_array = ((size_of_array/16)+1)*16;
-		buffer = (char*) malloc (size_of_array);
-		if (buffer == NULL) {fputs ("Memory error",stderr); exit (2);}
-
-		// copy the file into the buffer:
-		result = fread (buffer,1,lSize,iofile);
-		if (ferror(iofile)) {fputs ("Reading Error in Decrypt",stderr); exit (3);}
-
-		//Encrypt
-		aes256_context ctx; 
-		/*aes256_init(&ctx, (uint8_t*)passphrase);
-		aes256_encrypt_ecb(&ctx, (uint8_t*)buffer);*/
-
-		aes256_init(&ctx, (unsigned char*)passphrase);
-		aes256_decrypt_ecb(&ctx, (unsigned char*)buffer);
-		//Write back to file
-		lSize = 0;
-		for(int i=0; i<size_of_array;i++){
-			if(buffer[i]=='\0'||!isascii(buffer[i]))
-				buffer[i]='\0';
-			else
-				lSize++;
+		if((sizeof(char)*lSize) < size_of_array)
+		{
+			iofile = freopen(account_name, "a+", iofile);
+			char c = '\0';
+			for(int i=lSize; i<size_of_array;i++)
+				putc(c, iofile);
+			iofile = freopen(account_name, "rb", iofile);
+			fseek (iofile , 0 , SEEK_END);
+			lSize = ftell (iofile);
+			rewind (iofile);
+			if(lSize < size_of_array)
+			{
+				cout<<"adding to file did not work"<<endl;
+				return -1;
+			}
 		}
-		iofile = freopen(account_name, "w+", iofile);
-		result = fwrite (buffer,1,lSize,iofile);
 
-		if (ferror(iofile)) {fputs ("Writing Error in Decrypt",stderr); exit (3);}
+		//Create New File
+		char new_file[FILE_NAME_SIZE];
+		strcpy(new_file, account_name);
+		const char temp_ext[] = "_temp";
+		strcat(new_file, temp_ext);
+		FILE* encrypted_file = fopen(new_file, "wb");
+		if ( !encrypted_file )
+		{
+			cerr << "Error: Cannot find file"<< new_file << endl;
+			return false; 
+		}
 
-		free(buffer);
+		bool erase = false;
+		for(int i=0; i<lSize; i+=16)
+		{
+			result = fread (buffer,1,16,iofile);
+			if (ferror(iofile)) {fputs ("Reading Error in Encrypt",stderr); exit (3);}
+			//Encrypt
+			aes256_context ctx; 
+			aes256_init(&ctx, (uint8_t*)(passphrase));
+			aes256_decrypt_ecb(&ctx, (uint8_t*)(buffer));
+
+			//Write back to file
+			int end_of_file = 16;
+			for(int j=0; j<16; j++)
+			{
+				if(buffer[j] == '\0')
+				{
+					erase = true;
+					end_of_file = j;
+					break;
+				}
+			}
+			result = fwrite (buffer,1,end_of_file,encrypted_file);
+			if (ferror(iofile)) {fputs ("Writing Error in Encrypt",stderr); exit (3);}
+		}
+		//Close Files
 		fclose(iofile);
+		fclose(encrypted_file);
+		
+		//Remove Old File and Rename new file
+		remove(account_name);
+		rename(new_file, account_name);
 		return 0;
 	}
 
 #endif
 
+//--------------------------------------------------
+//int CreateNewAccountFile(const char [] account_no)  
+//
+//- creates [md5_hash(account_no)]
+//- returns 0 if success
+//- returns non-zero if failed
+//
+//--------------------------------------------------
+
+int CreateNewAccountFile(const char account_no[])
+{
+	const int size_of_hash = 64;
+	char account_hash[size_of_hash];
+	if(md5Hash(account_no, account_hash) != 0 ){
+		cout<<"md5hash failed"<<endl;
+		return 2;
+	}
+	FILE* new_account_file = fopen(account_hash, "a");
+	if(new_account_file != 0)
+	{
+		fclose(new_account_file);
+		return 0;
+	}
+	return 1;
+}
