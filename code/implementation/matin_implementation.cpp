@@ -158,7 +158,10 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 	//and do not withdraw.
 	if(account_amount < amount)
 	{
-		//TODO: log a message in log file
+		//log a message in log file
+		ofstream logfile(LOG_FILE_NAME, APPEND);
+		const char log_message[LOG_MESSAGE_MAX_SIZE] = "Account Overdrawn: $10 Fee Charged.";
+		log(logfile, log_message);
 		outfile <<-10.0 << endl;
 		outfile.close();
 		Encrypt(account_no, passphrase);
