@@ -61,7 +61,27 @@ int main()
 		cout<<"add account failure"<<endl;
 		return 1;
 	}
+	if(!makeDeposit(account_no, passphrase, 2000.00))
+	{
+		cout<<"deposite failure"<<endl;
+	}
 	if(!makeDeposit(account_no, passphrase, 20.00))
+	{
+		cout<<"deposite failure"<<endl;
+	}
+	if(!makeDeposit(account_no, passphrase, 20.00))
+	{
+		cout<<"deposite failure"<<endl;
+	}
+	if(!makeDeposit(account_no, passphrase, 50.00))
+	{
+		cout<<"deposite failure"<<endl;
+	}
+	if(!makeDeposit(account_no, passphrase, 60.00))
+	{
+		cout<<"deposite failure"<<endl;
+	}
+	if(!makeDeposit(account_no, passphrase, 80.00))
 	{
 		cout<<"deposite failure"<<endl;
 	}
@@ -69,7 +89,7 @@ int main()
 	//{
 	//	cout<<"deposite failure"<<endl;
 	//}
-	if(!makeWithdrawal(account_no, passphrase, 200.00))
+	if(!makeWithdrawal(account_no, passphrase, 6000.00))
 	{
 		cout<<"withdraw failure"<<endl;
 	}
@@ -256,14 +276,18 @@ double getBalance(const char account_no[], const char passphrase[])
 	}
 
 	//Ignore Personal Information from File
-	infile.ignore(numeric_limits<streamsize>::max(), '\n');
+	char trash[40];
+	infile.getline(trash,40, '\n');
 
 	//Read in all amounts and sum them together
 	double current_amount = 0.0;
 	double total_amount = 0.0;
+	cerr<<"before while loop"<<endl;
 	while(infile >> current_amount)
 	{
 		total_amount += current_amount;
+		cerr<<"Current Amount = "<< current_amount<<endl;
+		cerr<<"Total Amount = "<< total_amount<<endl;
 		current_amount = 0.0;
 	}
 
@@ -274,7 +298,7 @@ double getBalance(const char account_no[], const char passphrase[])
 	Encrypt(account_no, passphrase);
 
 	//All Actions Completed: return true
-	return true;
+	return total_amount;
 }
 
 
@@ -308,7 +332,8 @@ void printTopTenTransactions(const char account_no[], const char passphrase[])
 	}
 
 	//Ignore Personal Information from File
-	infile.ignore(numeric_limits<streamsize>::max(), '\n');
+	char trash[100];
+	infile.getline(trash,100, '\n');
 	
 	//Zero out array
 	for(int i=0; i<n; i++)
