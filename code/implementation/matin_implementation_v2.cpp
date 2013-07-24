@@ -38,6 +38,7 @@ using namespace std;
 
 //Your helper functions implementation
 	bool isValidAccountNumber(const char account_no[]);
+	void memoryErase(char account_name[], int size);
 //End of your helper functions implementation
 
 
@@ -55,7 +56,7 @@ bool makeDeposit(const char account_no[], const char passphrase[], double amount
 	//Is Not Negative
 	if(amount < 0)
 	{
-		cerr<<"Error: Incorrect Double Format"<<endl;
+		cout<<"Error: Incorrect Double Format"<<endl;
 		return false;
 	}
 
@@ -97,6 +98,10 @@ bool makeDeposit(const char account_no[], const char passphrase[], double amount
 
 	//Close Output File
 	outfile.close();
+
+	//For Security Purposes Only -- NOT REQUIRED
+	//Fill in Memory of Account_Name with Arbitrary Data
+	memoryErase(account_name, FILE_NAME_SIZE);
 
 	//Encrypt the File Before Exiting Function
 	Encrypt(account_no, passphrase);
@@ -171,6 +176,10 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 	outfile << amount << endl;
 	outfile.close();
 
+	//For Security Purposes Only -- NOT REQUIRED
+	//Fill in Memory of Account_Name with Arbitrary Data
+	memoryErase(account_name, FILE_NAME_SIZE);
+
 	//Encrypt the File Before Exiting Function
 	Encrypt(account_no, passphrase);
 
@@ -217,6 +226,10 @@ double getBalance(const char account_no[], const char passphrase[])
 
 	//Close File
 	infile.close();
+
+	//For Security Purposes Only -- NOT REQUIRED
+	//Fill in Memory of Account_Name with Arbitrary Data
+	memoryErase(account_name, FILE_NAME_SIZE);
 
 	//Encrypt the File Before Exiting Function
 	Encrypt(account_no, passphrase);
@@ -312,6 +325,10 @@ void printTopTenTransactions(const char account_no[], const char passphrase[])
 		cout<<top_trans[i]<<endl;
 	}
 
+	//For Security Purposes Only -- NOT REQUIRED
+	//Fill in Memory of Account_Name with Arbitrary Data
+	memoryErase(account_name, FILE_NAME_SIZE);
+
 	Encrypt(account_no, passphrase);
 	return;
 }
@@ -365,7 +382,7 @@ bool addNewAccount()
 	char account_name[FILE_NAME_SIZE];
 	if(md5Hash(account_no, account_name) != 0)
 	{
-		cerr<<"Error: MD5HASH Error"<<endl;
+		cout<<"Error: MD5HASH Error"<<endl;
 		return false;
 	}
 
@@ -373,7 +390,7 @@ bool addNewAccount()
 	ofstream newfile(account_name);
 	if ( !newfile )
 	{
-	    cerr << "Error: Cannot create " << account_name<<endl;
+	    cout << "Error: Cannot create " << account_name<<endl;
 	    return false; 
 	}
 	newfile <<passphrase<< endl;
@@ -404,13 +421,23 @@ bool isValidPassphrase(ifstream& account_file, const char passphrase[])
 
 }
 
+//bool log(FILE* log_file, const char log_message[])
 bool log(ofstream& log_file_stream, const char log_message[])
 {
 	log_file_stream << log_message<<endl;
-	return true;
+	return false;
 }
 
 /*Helper Functions*/
+//Implentation of Helper Functions
+void memoryErase(char account_name[], int size)
+{
+	for(int i=0; i < size; i++)
+	{
+		account_name[i] = '*';
+	}
+}
+
 bool isValidAccountNumber(const char account_no[])
 {
 	int acc_no_len = strlen(account_no);
@@ -1129,7 +1156,7 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 		char *account_num;
 		int acc_no_len = strlen(account_no);
 		if(acc_no_len != 11 ){
-			cerr<<"account length error: length is "<<acc_no_len<<endl;
+			cout<<"account length error: length is "<<acc_no_len<<endl;
 			return -1;
 		}
 		account_num = (char*)account_no;
@@ -1147,7 +1174,7 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 		char account_name[33];
 		if(md5Hash(account_no, account_name) != 0)
 		{
-			cerr<<"Error: MD5HASH Error"<<endl;
+			cout<<"Error: MD5HASH Error"<<endl;
 			return false;
 		}
 
@@ -1155,7 +1182,7 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 		FILE* iofile = fopen(account_name, "rb");
 		if ( !iofile )
 		{
-			cerr << "Error: Cannot find file"<< account_name << endl;
+			cout << "Error: Cannot find file"<< account_name << endl;
 			return false; 
 		}
 
@@ -1183,7 +1210,7 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 			rewind (iofile);
 			if(lSize < size_of_array)
 			{
-				cerr<<"adding to file did not work"<<endl;
+				cout<<"adding to file did not work"<<endl;
 				return -1;
 			}
 		}
@@ -1196,13 +1223,16 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 		FILE* encrypted_file = fopen(new_file, "wb");
 		if ( !encrypted_file )
 		{
-			cerr << "Error: Cannot find file"<< new_file << endl;
+			cout << "Error: Cannot find file"<< new_file << endl;
 			return false; 
 		}
 
 		for(int i=0; i<lSize; i+=16)
 		{
 			result = fread (buffer,1,16,iofile);
+			/*if(result < 16)
+				continue;
+			cout<<"before encrypt = "<<buffer<<endl;*/
 			if (ferror(iofile)) {fputs ("Reading Error in Encrypt",stderr); exit (3);}
 			//Encrypt
 			aes256_context ctx; 
@@ -1267,7 +1297,7 @@ void aes256_decrypt_ecb(aes256_context *ctx, uint8_t *buf)
 			rewind (iofile);
 			if(lSize < size_of_array)
 			{
-				cerr<<"adding to file did not work"<<endl;
+				cout<<"adding to file did not work"<<endl;
 				return -1;
 			}
 		}
@@ -1334,7 +1364,7 @@ int CreateNewAccountFile(const char account_no[])
 	const int size_of_hash = 64;
 	char account_hash[size_of_hash];
 	if(md5Hash(account_no, account_hash) != 0 ){
-		cerr<<"md5hash failed"<<endl;
+		cout<<"md5hash failed"<<endl;
 		return 2;
 	}
 	FILE* new_account_file = fopen(account_hash, "a");
