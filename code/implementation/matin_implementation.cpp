@@ -45,6 +45,55 @@ using namespace std;
 
 int main()
 {
+	char account_no[12];
+	char passphrase[60];
+	cout<<"Please Enter an Account Number formatted as XXXXX-XXXXX :"<<endl;
+	cin.getline(account_no,12);
+	if(!isValidAccountNumber(account_no))
+	{
+		cerr<<"Invalid Account Number in main()"<<endl;
+		return false;
+	}
+	cout<<"Please Enter a Password to Associate with Your Account :"<<endl;
+	cin.getline(passphrase,60);
+	if(!addNewAccount())
+	{
+		cout<<"add account failure"<<endl;
+		return 1;
+	}
+	if(!makeDeposit(account_no, passphrase, 20.00))
+	{
+		cout<<"deposite failure"<<endl;
+	}
+	//if(!makeDeposit(account_no, passphrase, 10.123))
+	//{
+	//	cout<<"deposite failure"<<endl;
+	//}
+	if(!makeWithdrawal(account_no, passphrase, 200.00))
+	{
+		cout<<"withdraw failure"<<endl;
+	}
+	if(!makeDeposit(account_no, passphrase, 100.30))
+	{
+		cout<<"deposite failure"<<endl;
+	}
+	if(!makeWithdrawal(account_no, passphrase, 80.00))
+	{
+		cout<<"withdraw failure"<<endl;
+	}
+	if(!makeDeposit(account_no, passphrase, 59.0000))
+	{
+		cout<<"deposite failure"<<endl;
+	}
+
+	cout<<"balance is "<<getBalance(account_no,passphrase)<<endl;// 20-10+100.3+-80+59
+	cout<<"=============================================================================="<<endl;
+	cout<<" PRINTING TOP 10 TRANSACTIONS " << endl<<endl;
+
+	printTopTenTransactions(account_no, passphrase);
+	
+	Decrypt(account_no, passphrase);
+	return 0;
 
 }
 
@@ -328,7 +377,7 @@ bool addNewAccount()
 	char second_passphrase[PASSPHRASE_MAX_SIZE];
 	cout<<"Please Enter an Account Number formatted as XXXXX-XXXXX :"<<endl;
 	cin.getline(account_no,ACCOUNT_NUMBER_SIZE);
-	if(isValidAccountNumber(account_no))
+	if(!isValidAccountNumber(account_no))
 	{
 		cerr<<"Invalid Account Number in addNewAccount()"<<endl;
 		return false;
@@ -418,24 +467,31 @@ bool isValidAccountNumber(const char account_no[])
 {
 	int acc_no_len = strlen(account_no);
 	if(acc_no_len != ACCOUNT_NUMBER_SIZE-1 ){
+		cout<<"account length error"<<endl;
 		return false;
 	}
 	for(int i=0; i<5; i++)
 	{
 		if(!isdigit(account_no[i])){
+			cout<<"first digit set error"<<endl;
 			return false;
 		}
 	}
-	if(account_no[5] != '-')
+	if(account_no[5] != '-'){
+		cout<<"dash error"<<endl;
 		return false;
+	}
 	for(int i=6; i<11; i++)
 	{
 		if(!isdigit(account_no[i])){
+			cout<<"second digit set error"<<endl;
 			return false;
 		}
 	}
-	if(account_no[11] != '\0' && account_no[11] != '\n' )
+	if(account_no[11] != '\0' && account_no[11] != '\n' ){
+		cout<<"ending error"<<endl;
 		return false;
+	}
 	return true;
 }
 
