@@ -214,7 +214,7 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 	ofstream outfile(account_name, APPEND);
 	if ( !outfile )
 	{
-		cerr << "Error: Cannot create account for account#" << account_name <<"."<<endl;
+		cerr << "Error: Cannot create account for account#" << account_no <<"."<<endl;
 		Encrypt(account_no, passphrase);
 	    return false; 
 	}
