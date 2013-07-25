@@ -24,7 +24,6 @@ using namespace std;
 	bool addNewAccount();
 	void printTopTenTransactions(const char account_no[], const char passphrase[]);
 	bool log(ofstream& log_file_stream, const char log_message[]);
-	bool isValidPassphrase(ifstream& account_file, const char passphrase[]);
 //End of required functions to implement
 
 //Some constant global variables
@@ -38,6 +37,7 @@ using namespace std;
 
 //Your helper functions implementation
 	bool isValidAccountNumber(const char account_no[]);
+	bool isValidPassphrase(ifstream& account_file, const char passphrase[]);
 //End of your helper functions implementation
 
 
@@ -140,7 +140,7 @@ bool makeDeposit(const char account_no[], const char passphrase[], double amount
 		return false;
 	}
 
-	//Check if current password matches orginal password
+	//Check if current password matches original password
 	ifstream acc(account_name);
 	if(!isValidPassphrase(acc, passphrase))
 	{
@@ -198,7 +198,7 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 		return false;
 	}
 
-	//Check if current password matches orginal password
+	//Check if current password matches original  password
 	ifstream acc(account_name);
 	if(!isValidPassphrase(acc, passphrase))
 	{
@@ -214,7 +214,7 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 	ofstream outfile(account_name, APPEND);
 	if ( !outfile )
 	{
-	    cerr << "Error: Cannot create results.txt!" << endl;
+		cerr << "Error: Cannot create account for account#" << account_name <<"."<<endl;
 		Encrypt(account_no, passphrase);
 	    return false; 
 	}
@@ -229,7 +229,9 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 	{
 		//log a message in log file
 		ofstream logfile(LOG_FILE_NAME, APPEND);
-		const char log_message[LOG_MESSAGE_MAX_SIZE] = "Account Overdrawn: $10 Fee Charged.";
+		char log_message[LOG_MESSAGE_MAX_SIZE] = "Account#";
+		strcat(log_message,account_no);
+		strcat(log_message, " Overdrawn: $10 Fee Charged.");
 		log(logfile, log_message);
 		outfile <<-10.0 << endl;
 		outfile.close();
@@ -265,7 +267,7 @@ double getBalance(const char account_no[], const char passphrase[])
 		return 0.0;
 	}
 
-	//Check if current password matches orginal password
+	//Check if current password matches original password
 	ifstream infile(account_name);
 	if(!isValidPassphrase(infile, passphrase))
 	{
@@ -467,6 +469,13 @@ bool addNewAccount()
 
 }
 
+bool log(ofstream& log_file_stream, const char log_message[])
+{
+	log_file_stream << log_message <<" "<< endl;
+	return true;
+}
+
+/*Helper Functions*/
 bool isValidPassphrase(ifstream& account_file, const char passphrase[])
 {
     //reads the first line of the file 
@@ -481,40 +490,33 @@ bool isValidPassphrase(ifstream& account_file, const char passphrase[])
 
 }
 
-bool log(ofstream& log_file_stream, const char log_message[])
-{
-	log_file_stream << log_message<<endl;
-	return true;
-}
-
-/*Helper Functions*/
 bool isValidAccountNumber(const char account_no[])
 {
 	int acc_no_len = strlen(account_no);
 	if(acc_no_len != ACCOUNT_NUMBER_SIZE-1 ){
-		cout<<"account length error"<<endl;
+		cerr<<"Account Length Error"<<endl;
 		return false;
 	}
 	for(int i=0; i<5; i++)
 	{
 		if(!isdigit(account_no[i])){
-			cout<<"first digit set error"<<endl;
+			cerr<<"first digit set error"<<endl;
 			return false;
 		}
 	}
 	if(account_no[5] != '-'){
-		cout<<"dash error"<<endl;
+		cerr<<"dash error"<<endl;
 		return false;
 	}
 	for(int i=6; i<11; i++)
 	{
 		if(!isdigit(account_no[i])){
-			cout<<"second digit set error"<<endl;
+			cerr<<"second digit set error"<<endl;
 			return false;
 		}
 	}
 	if(account_no[11] != '\0' && account_no[11] != '\n' ){
-		cout<<"ending error"<<endl;
+		cerr<<"ending error"<<endl;
 		return false;
 	}
 	return true;
