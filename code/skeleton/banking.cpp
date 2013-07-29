@@ -23,7 +23,6 @@ using namespace std;
 	double getBalance(const char account_no[], const char passphrase[]);
 	bool addNewAccount();
 	void printTopTenTransactions(const char account_no[], const char passphrase[]);
-//	bool log(FILE* log_file, const char log_message[]);
 	bool log(ofstream& log_file_stream, const char log_message[]);
 
 //End of required functions to implement
@@ -32,6 +31,7 @@ using namespace std;
 
 
 //Some constant global variables
+	const int PERSONAL_INFO_MAX_SIZE = 150; 
 	const int FILE_NAME_SIZE = 64;
 	const int LOG_MESSAGE_MAX_SIZE = 100;
 	const int ACCOUNT_NUMBER_SIZE = 12;
@@ -96,10 +96,9 @@ bool addNewAccount(const char account_no[], const char passphrase[])
 
 
 
-//bool log(FILE* log_file, const char log_message[])
 bool log(ofstream& log_file_stream, const char log_message[])
 {
-	log_file_stream << log_message;
+	//Add your code here
 	return false;
 }
 
@@ -1016,8 +1015,8 @@ int CreateNewAccountFile(const char account_no[])
 	FILE* new_account_file = fopen(account_hash, "r");
 	if(new_account_file == NULL)
 	{
-		FILE* new_account_file = fopen(account_hash, "r");
-		fclose(new_account_file);
+		FILE* new2_account_file = fopen(account_hash, "a+");
+		fclose(new2_account_file);
 		return 0;
 	}
 	cerr<<"account may already exist"<<endl;
