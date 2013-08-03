@@ -1017,8 +1017,10 @@ int CreateNewAccountFile(const char account_no[])
 	{
 		FILE* new2_account_file = fopen(account_hash, "a+");
 		fclose(new2_account_file);
+		
 		return 0;
 	}
+	fclose(new_account_file);
 	cerr<<"account may already exist"<<endl;
 	return 1;
 }
