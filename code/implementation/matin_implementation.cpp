@@ -24,15 +24,16 @@ using namespace std;
 	bool addNewAccount();
 	void printTopTenTransactions(const char account_no[], const char passphrase[]);
 	bool log(ofstream& log_file_stream, const char log_message[]);
+
 //End of required functions to implement
 
 //Some constant global variables
+	const int PERSONAL_INFO_MAX_SIZE = 150; 
 	const int FILE_NAME_SIZE = 64;
 	const int LOG_MESSAGE_MAX_SIZE = 100;
 	const int ACCOUNT_NUMBER_SIZE = 12;
 	const int PASSPHRASE_MAX_SIZE = 60;
 	const char LOG_FILE_NAME[] = "banking.log";
-	#define APPEND std::ofstream::app
 //End of some constant global variables
 
 //Your helper functions implementation
@@ -41,82 +42,10 @@ using namespace std;
 //End of your helper functions implementation
 
 
-
-
 int main()
 {
-	char account_no[12];
-	char passphrase[60];
-	cout<<"Please Enter an Account Number formatted as XXXXX-XXXXX :"<<endl;
-	cin.getline(account_no,12);
-	if(!isValidAccountNumber(account_no))
-	{
-		cerr<<"Invalid Account Number in main()"<<endl;
-		return false;
-	}
-	cout<<"Please Enter a Password to Associate with Your Account :"<<endl;
-	cin.getline(passphrase,60);
-	if(!addNewAccount())
-	{
-		cout<<"add account failure"<<endl;
-		return 1;
-	}
-	if(!makeDeposit(account_no, passphrase, 2000.00))
-	{
-		cout<<"deposite failure"<<endl;
-	}
-	if(!makeDeposit(account_no, passphrase, 20.00))
-	{
-		cout<<"deposite failure"<<endl;
-	}
-	if(!makeDeposit(account_no, passphrase, 20.00))
-	{
-		cout<<"deposite failure"<<endl;
-	}
-	if(!makeDeposit(account_no, passphrase, 50.00))
-	{
-		cout<<"deposite failure"<<endl;
-	}
-	if(!makeDeposit(account_no, passphrase, 60.00))
-	{
-		cout<<"deposite failure"<<endl;
-	}
-	if(!makeDeposit(account_no, passphrase, 80.00))
-	{
-		cout<<"deposite failure"<<endl;
-	}
-	//if(!makeDeposit(account_no, passphrase, 10.123))
-	//{
-	//	cout<<"deposite failure"<<endl;
-	//}
-	if(!makeWithdrawal(account_no, passphrase, 6000.00))
-	{
-		cout<<"withdraw failure"<<endl;
-	}
-	if(!makeDeposit(account_no, passphrase, 100.30))
-	{
-		cout<<"deposite failure"<<endl;
-	}
-	if(!makeWithdrawal(account_no, passphrase, 80.00))
-	{
-		cout<<"withdraw failure"<<endl;
-	}
-	if(!makeDeposit(account_no, passphrase, 59.0000))
-	{
-		cout<<"deposite failure"<<endl;
-	}
-
-	cout<<"balance is "<<getBalance(account_no,passphrase)<<endl;// 20-10+100.3+-80+59
-	cout<<"=============================================================================="<<endl;
-	cout<<" PRINTING TOP 10 TRANSACTIONS " << endl<<endl;
-
-	printTopTenTransactions(account_no, passphrase);
-	
-	Decrypt(account_no, passphrase);
-	return 0;
 
 }
-
 
 bool makeDeposit(const char account_no[], const char passphrase[], double amount)
 {
@@ -151,8 +80,8 @@ bool makeDeposit(const char account_no[], const char passphrase[], double amount
 	}
 	acc.close();
 
-	//Open Output File in Append Mode
-	ofstream outfile(account_name, APPEND);
+	//Open Output File in std::ofstream::app Mode
+	ofstream outfile(account_name, std::ofstream::app);
 	if ( !outfile )
 	{
 	    cerr << "Error: Cannot find file"<< account_name << endl;
@@ -209,9 +138,9 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 	}
 	acc.close();
 
-	//Open Output File in Append Mode
+	//Open Output File in std::ofstream::app Mode
 	//Will Output a $10 Fee if Account is Overdrawn
-	ofstream outfile(account_name, APPEND);
+	ofstream outfile(account_name, std::ofstream::app);
 	if ( !outfile )
 	{
 		cerr << "Error: Cannot create account for account#" << account_no <<"."<<endl;
@@ -228,7 +157,7 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 	if(account_amount < amount)
 	{
 		//log a message in log file
-		ofstream logfile(LOG_FILE_NAME, APPEND);
+		ofstream logfile(LOG_FILE_NAME, std::ofstream::app);
 		char log_message[LOG_MESSAGE_MAX_SIZE] = "Account#";
 		strcat(log_message,account_no);
 		strcat(log_message, " Overdrawn: $10 Fee Charged.");
@@ -427,18 +356,12 @@ bool addNewAccount()
 		return false;
 	}
 
-	char first_name[30];
-	char last_name[30];
-	char ssn[12];
+	char personal_info[80];
 
 	//Getting Account Holders Personal Information
-	cout<<"What is your first name?"<<endl;
-	cin.getline(first_name,30);
-	cout<<"What is your last name?"<<endl;
-	cin.getline(last_name,30);
-	cout<<"What is your social security? (Format: XXX-XX-XXXX)"<<endl;
-	cin.getline(ssn,12);
-
+	cout<<"What is your first name, last name, Social Secuirty?"<<endl;
+	cout<<"(Example: John Smith 123-12-1234)"<<endl;
+	cin.getline(personal_info,80);
 
 	//Get Account Name from md5Hash
 	char account_name[FILE_NAME_SIZE];
@@ -456,8 +379,7 @@ bool addNewAccount()
 	    return false; 
 	}
 	newfile <<passphrase<< endl;
-	newfile <<first_name << " "<<last_name<<", ";
-	newfile <<"SS#: " << ssn << endl;
+	newfile <<personal_info<<endl;
 	newfile.close();
 	Encrypt(account_no, passphrase);
 	if(!makeDeposit(account_no, passphrase, 0.00))
@@ -515,7 +437,7 @@ bool isValidAccountNumber(const char account_no[])
 			return false;
 		}
 	}
-	if(account_no[11] != '\0' && account_no[11] != '\n' ){
+	if(account_no[11] != '\0'){
 		cerr<<"ending error"<<endl;
 		return false;
 	}
@@ -1437,8 +1359,10 @@ int CreateNewAccountFile(const char account_no[])
 	{
 		FILE* new2_account_file = fopen(account_hash, "a+");
 		fclose(new2_account_file);
+		
 		return 0;
 	}
+	fclose(new_account_file);
 	cerr<<"account may already exist"<<endl;
 	return 1;
 }

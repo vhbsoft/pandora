@@ -27,9 +27,6 @@ using namespace std;
 
 //End of required functions to implement
 
-
-
-
 //Some constant global variables
 	const int PERSONAL_INFO_MAX_SIZE = 150; 
 	const int FILE_NAME_SIZE = 64;
@@ -38,7 +35,6 @@ using namespace std;
 	const int PASSPHRASE_MAX_SIZE = 60;
 	const char LOG_FILE_NAME[] = "banking.log";
 //End of some constant global variables
-
 
 
 //Your helper functions implementation
