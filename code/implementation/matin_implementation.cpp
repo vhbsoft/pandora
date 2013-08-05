@@ -39,6 +39,7 @@ using namespace std;
 //Your helper functions implementation
 	bool isValidAccountNumber(const char account_no[]);
 	bool isValidPassphrase(ifstream& account_file, const char passphrase[]);
+	void secureAccountNumber(char secure_no[], char account_no[]);
 //End of your helper functions implementation
 
 
@@ -46,6 +47,8 @@ int main()
 {
 
 }
+
+
 
 bool makeDeposit(const char account_no[], const char passphrase[], double amount)
 {
@@ -58,7 +61,8 @@ bool makeDeposit(const char account_no[], const char passphrase[], double amount
 	}
 
 	//Decrypt the Encrypted File
-	Decrypt(account_no, passphrase);
+	if(Decrypt(account_no, passphrase) != 0)
+		return false;
 
 	//Get Account Name from md5Hash
 	char account_name[FILE_NAME_SIZE];
@@ -80,7 +84,7 @@ bool makeDeposit(const char account_no[], const char passphrase[], double amount
 	}
 	acc.close();
 
-	//Open Output File in std::ofstream::app Mode
+	//Open Output File in Append Mode
 	ofstream outfile(account_name, std::ofstream::app);
 	if ( !outfile )
 	{
@@ -116,7 +120,8 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 	}
 
 	//Decrypt the Encrypted File
-	Decrypt(account_no, passphrase);
+	if(Decrypt(account_no, passphrase) != 0)
+		return false;
 
 	//Get Account Name from md5Hash
 	char account_name[FILE_NAME_SIZE];
@@ -138,12 +143,14 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 	}
 	acc.close();
 
-	//Open Output File in std::ofstream::app Mode
+	//Open Output File in Append Mode
 	//Will Output a $10 Fee if Account is Overdrawn
 	ofstream outfile(account_name, std::ofstream::app);
 	if ( !outfile )
 	{
-		cerr << "Error: Cannot create account for account#" << account_no <<"."<<endl;
+		char secure_account_no[ACCOUNT_NUMBER_SIZE];
+		secureAccountNumber(secure_account_no, account_no);
+		cerr << "Error: Cannot create account for account#" << secure_account_no <<"."<<endl;
 		Encrypt(account_no, passphrase);
 	    return false; 
 	}
@@ -159,7 +166,9 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 		//log a message in log file
 		ofstream logfile(LOG_FILE_NAME, std::ofstream::app);
 		char log_message[LOG_MESSAGE_MAX_SIZE] = "Account#";
-		strcat(log_message,account_no);
+		char secure_account_no[ACCOUNT_NUMBER_SIZE];
+		secureAccountNumber(secure_account_no, account_no);
+		strcat(log_message,secure_account_no);
 		strcat(log_message, " Overdrawn: $10 Fee Charged.");
 		log(logfile, log_message);
 		outfile <<-10.0 << endl;
@@ -186,14 +195,15 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 double getBalance(const char account_no[], const char passphrase[])
 {
 	//Decrypt the Encrypted File
-	Decrypt(account_no, passphrase);
+	if(Decrypt(account_no, passphrase) != 0)
+		return -1000;
 
 	//Get Account Name from md5Hash
 	char account_name[FILE_NAME_SIZE];
 	if(md5Hash(account_no, account_name) != 0)
 	{
 		cerr<<"Error: MD5HASH Error"<<endl;
-		return 0.0;
+		return -1000;
 	}
 
 	//Check if current password matches original password
@@ -203,22 +213,20 @@ double getBalance(const char account_no[], const char passphrase[])
 		cerr<<"Error: Account Password Invalid"<<endl;
 		infile.close();
 		Encrypt(account_no, passphrase);
-		return 0;
+		return -1000;
 	}
 
 	//Ignore Personal Information from File
-	char trash[40];
-	infile.getline(trash,40, '\n');
+	char trash[PERSONAL_INFO_MAX_SIZE];
+	infile.getline(trash,PERSONAL_INFO_MAX_SIZE, '\n');
 
 	//Read in all amounts and sum them together
 	double current_amount = 0.0;
 	double total_amount = 0.0;
-	cerr<<"before while loop"<<endl;
+
 	while(infile >> current_amount)
 	{
 		total_amount += current_amount;
-		cerr<<"Current Amount = "<< current_amount<<endl;
-		cerr<<"Total Amount = "<< total_amount<<endl;
 		current_amount = 0.0;
 	}
 
@@ -242,7 +250,8 @@ void printTopTenTransactions(const char account_no[], const char passphrase[])
 	double top_trans[n];
 
 	//Decrypt the Encrypted File
-	Decrypt(account_no, passphrase);
+	if(Decrypt(account_no, passphrase) != 0)
+		return;
 
 	//Get Account Name from md5Hash
 	char account_name[FILE_NAME_SIZE];
@@ -263,8 +272,8 @@ void printTopTenTransactions(const char account_no[], const char passphrase[])
 	}
 
 	//Ignore Personal Information from File
-	char trash[100];
-	infile.getline(trash,100, '\n');
+	char trash[PERSONAL_INFO_MAX_SIZE];
+	infile.getline(trash,PERSONAL_INFO_MAX_SIZE, '\n');
 	
 	//Zero out array
 	for(int i=0; i<n; i++)
@@ -274,6 +283,7 @@ void printTopTenTransactions(const char account_no[], const char passphrase[])
 	int end_of_array=0;
 	double next_value;
 	infile>>top_trans[0];
+	end_of_array++;
 	while(infile >> next_value)
 	{
 		//Smallest Value in Array Currently
@@ -332,7 +342,7 @@ bool addNewAccount()
 	char passphrase[PASSPHRASE_MAX_SIZE];
 	char second_passphrase[PASSPHRASE_MAX_SIZE];
 	cout<<"Please Enter an Account Number formatted as XXXXX-XXXXX :"<<endl;
-	cin.getline(account_no,ACCOUNT_NUMBER_SIZE);
+	cin >> account_no;
 	if(!isValidAccountNumber(account_no))
 	{
 		cerr<<"Invalid Account Number in addNewAccount()"<<endl;
@@ -346,9 +356,9 @@ bool addNewAccount()
 
 	//Getting Passphrase
 	cout<<"Please Enter a Password to Associate with Your Account:"<<endl;
-	cin.getline(passphrase,PASSPHRASE_MAX_SIZE);
+	cin >> passphrase;
 	cout<<"Re-Enter Passphrase To Check for Accuracy:"<<endl;
-	cin.getline(second_passphrase,PASSPHRASE_MAX_SIZE);
+	cin >> second_passphrase;
 
 	if(strcmp(passphrase, second_passphrase) != 0)
 	{
@@ -356,12 +366,11 @@ bool addNewAccount()
 		return false;
 	}
 
-	char personal_info[80];
+	char personal_info[PERSONAL_INFO_MAX_SIZE];
 
 	//Getting Account Holders Personal Information
 	cout<<"What is your first name, last name, Social Secuirty?"<<endl;
-	cout<<"(Example: John Smith 123-12-1234)"<<endl;
-	cin.getline(personal_info,80);
+	cin >> personal_info;
 
 	//Get Account Name from md5Hash
 	char account_name[FILE_NAME_SIZE];
@@ -393,7 +402,7 @@ bool addNewAccount()
 
 bool log(ofstream& log_file_stream, const char log_message[])
 {
-	log_file_stream << log_message <<" "<< endl;
+	log_file_stream << log_message << endl;
 	return true;
 }
 
@@ -444,7 +453,17 @@ bool isValidAccountNumber(const char account_no[])
 	return true;
 }
 
-
+void secureAccountNumber(char secure_no[], const char account_no[])
+{
+	strcpy(secure_no, account_no);
+	for(int i=0; i<6;i++)
+	{
+		if(i == 5)
+			continue;
+		else
+			secure_no[i] = '*';
+	}
+}
 /*
 =========================================================================================
 =========================================================================================
@@ -1359,7 +1378,6 @@ int CreateNewAccountFile(const char account_no[])
 	{
 		FILE* new2_account_file = fopen(account_hash, "a+");
 		fclose(new2_account_file);
-		
 		return 0;
 	}
 	fclose(new_account_file);
