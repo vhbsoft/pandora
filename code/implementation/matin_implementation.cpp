@@ -196,14 +196,14 @@ double getBalance(const char account_no[], const char passphrase[])
 {
 	//Decrypt the Encrypted File
 	if(Decrypt(account_no, passphrase) != 0)
-		return -1000;
+		return -10000;
 
 	//Get Account Name from md5Hash
 	char account_name[FILE_NAME_SIZE];
 	if(md5Hash(account_no, account_name) != 0)
 	{
 		cerr<<"Error: MD5HASH Error"<<endl;
-		return -1000;
+		return -10000;
 	}
 
 	//Check if current password matches original password
@@ -213,7 +213,7 @@ double getBalance(const char account_no[], const char passphrase[])
 		cerr<<"Error: Account Password Invalid"<<endl;
 		infile.close();
 		Encrypt(account_no, passphrase);
-		return -1000;
+		return -10000;
 	}
 
 	//Ignore Personal Information from File
