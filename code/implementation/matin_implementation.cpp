@@ -39,13 +39,22 @@ using namespace std;
 //Your helper functions implementation
 	bool isValidAccountNumber(const char account_no[]);
 	bool isValidPassphrase(ifstream& account_file, const char passphrase[]);
-	void secureAccountNumber(char secure_no[], char account_no[]);
+	void secureAccountNumber(char secure_no[], const char account_no[]);
 //End of your helper functions implementation
 
 
 int main()
 {
-
+	addNewAccount();
+	char account[] = "00000-00000";
+	char password[] = "helloworld";
+	makeDeposit(account, password, 1000.00);
+	makeWithdrawal(account, password, 90.00);
+	makeWithdrawal(account, password, 1000.00);
+	makeDeposit(account, password, 1000.00);
+	getBalance(account, password);
+	printTopTenTransactions(account, password);
+	Decrypt(account, password);
 }
 
 
@@ -77,7 +86,7 @@ bool makeDeposit(const char account_no[], const char passphrase[], double amount
 	ifstream acc(account_name);
 	if(!isValidPassphrase(acc, passphrase))
 	{
-		cerr<<"Error: Account Password Invalid"<<endl;
+		cerr<<"Error: Account Password Invalid in makeDeposit()"<<endl;
 		acc.close();
 		Encrypt(account_no, passphrase);
 		return false;
@@ -119,6 +128,9 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 		return false;
 	}
 
+	//Check the amount in account currently
+	double account_amount = getBalance(account_no, passphrase);
+
 	//Decrypt the Encrypted File
 	if(Decrypt(account_no, passphrase) != 0)
 		return false;
@@ -136,7 +148,7 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 	ifstream acc(account_name);
 	if(!isValidPassphrase(acc, passphrase))
 	{
-		cerr<<"Error: Account Password Invalid"<<endl;
+		cerr<<"Error: Account Password Invalid in makeWithdrawal()"<<endl;
 		acc.close();
 		Encrypt(account_no, passphrase);
 		return false;
@@ -154,9 +166,6 @@ bool makeWithdrawal(const char account_no[], const char passphrase[], double amo
 		Encrypt(account_no, passphrase);
 	    return false; 
 	}
-
-	//Check the amount in account currently
-	double account_amount = getBalance(account_no, passphrase);
 
 	//If the withdrawal amount is greater than 
 	//The amount in the account, charge a $10 fee
@@ -210,7 +219,7 @@ double getBalance(const char account_no[], const char passphrase[])
 	ifstream infile(account_name);
 	if(!isValidPassphrase(infile, passphrase))
 	{
-		cerr<<"Error: Account Password Invalid"<<endl;
+		cerr<<"Error: Account Password Invalid in getBalance()"<<endl;
 		infile.close();
 		Encrypt(account_no, passphrase);
 		return -10000;
@@ -265,7 +274,7 @@ void printTopTenTransactions(const char account_no[], const char passphrase[])
 	ifstream infile(account_name);
 	if(!isValidPassphrase(infile, passphrase))
 	{
-		cerr<<"Error: Account Password Invalid"<<endl;
+		cerr<<"Error: Account Password Invalid in printTopTenTransactions()"<<endl;
 		infile.close();
 		Encrypt(account_no, passphrase);
 		return;
