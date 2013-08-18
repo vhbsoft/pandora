@@ -10,7 +10,6 @@ int main(){
 	bool deposit = makeDeposit(account, password, 10);
 	bool withdraw = makeWithdrawal(account, password, 1);
 	bool balance = getBalance(account, password);
-	bool print = printTopTenTransactions(account, password);
 
 	if(!deposit){
 		outfile<<"Passed Test : checked passphrase in makeDeposit"<<endl;
@@ -31,13 +30,6 @@ int main(){
 	}
 	else{
 		outfile<<"Failed Test : returend true for invalid passphrase in getBalance"<<endl;
-	}
-
-	if(!print){
-		outfile<<"Passed Test : checked passphrase in printTopTenTransactions"<<endl;
-	}
-	else{
-		outfile<<"Failed Test : returend true for invalid passphrase in printTopTenTransactions"<<endl;
 	}
 
 	outfile.close();

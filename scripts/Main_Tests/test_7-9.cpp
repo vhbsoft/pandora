@@ -24,6 +24,16 @@ int main(){
 		outfile<<"Failed Test : Attempt to Overdraw from Account -> returned true or incorrect balance"<<endl;
 	}
 
+	ifstream banking("banking.log");
+	if(banking){
+		outfile<<"Passed Test : Created Log File"<<endl;
+	}
+	else{
+		outfile<<"Failed Test : Failed to Create Log File"<<endl;
+	}
+	banking.close();
+	remove("banking.log");
+	
 	outfile.close();
 	return 0;
 }

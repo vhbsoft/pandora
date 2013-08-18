@@ -8,8 +8,9 @@ int main(){
 		 "99999-99999"};
 	char password[] = "password";
 	char test_output[] = "test_output";
-	for(int i=0; i<10; i++)
+	for(int i=0; i<10; i++){
 		Encrypt(accounts[i], password);
+	}
 	ofstream outfile(test_output, std::ofstream::app);
 
 	if(getBalance(accounts[0], password) != 0){
