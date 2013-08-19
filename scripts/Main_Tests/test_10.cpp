@@ -20,27 +20,6 @@ int main(){
 		outfile<<"Passed Test : getBalance(account, password)"<<endl;
 	}
 
-	if(getBalance(accounts[1], password) != 1000){
-		outfile<<"Failed Test : getBalance(account, password)"<<endl;
-	}
-	else{
-		outfile<<"Passed Test : getBalance(account, password)"<<endl;
-	}
-
-	if(getBalance(accounts[2], password) != 0){
-		outfile<<"Failed Test : getBalance(account, password)"<<endl;
-	}
-	else{
-		outfile<<"Passed Test : getBalance(account, password)"<<endl;
-	}
-
-	if(getBalance(accounts[5], password) != 3599.93){
-		outfile<<"Failed Test : getBalance(account, password)"<<endl;
-	}
-	else{
-		outfile<<"Passed Test : getBalance(account, password)"<<endl;
-	}
-	
 	outfile.close();
 	return 0;
 }

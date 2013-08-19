@@ -21,7 +21,7 @@ int main(){
 		outfile<<"Passed Test : Attempt to Overdraw from Account"<<endl;
 	}
 	else{
-		outfile<<"Failed Test : Attempt to Overdraw from Account -> returned true or incorrect balance"<<endl;
+		outfile<<"Failed Test : Attempt to Overdraw from Account -> returned true"<<endl;
 	}
 
 	ifstream banking("banking.log");
